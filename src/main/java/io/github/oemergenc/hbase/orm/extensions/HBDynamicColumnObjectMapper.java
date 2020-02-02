@@ -64,7 +64,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Put writeValueAsPut(HBRecord<R> record) {
         validateHBDynamicClass(((Class<T>) record.getClass()));
-        Put put = new Put(composeRowKey(record));
+        Put put = super.writeValueAsPut(record);
         for (Map.Entry<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> fe : convertRecordToMap(record).entrySet()) {
             byte[] family = fe.getKey();
             for (Map.Entry<byte[], NavigableMap<Long, byte[]>> e : fe.getValue().entrySet()) {

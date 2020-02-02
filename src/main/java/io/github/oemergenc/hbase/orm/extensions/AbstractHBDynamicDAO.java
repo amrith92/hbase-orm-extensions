@@ -12,10 +12,10 @@ import org.apache.hadoop.hbase.client.Table;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R>, T extends HBRecord<R>> extends AbstractHBDAO<R, T> {
+public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R>, T extends HBRecord<R>>
+        extends AbstractHBDAO<R, T> {
 
     private final HBDynamicColumnObjectMapper hbDynamicColumnObjectMapper;
 
@@ -24,11 +24,11 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
         hbDynamicColumnObjectMapper = new HBDynamicColumnObjectMapper(new BestSuitCodec());
     }
 
-    public T getDynamic(R rowKey) throws IOException {
-        return getDynamic(rowKey, 1);
+    public T get(R rowKey) throws IOException {
+        return get(rowKey, 1);
     }
 
-    public T getDynamic(R rowKey, int numVersionsToFetch) throws IOException {
+    public T get(R rowKey, int numVersionsToFetch) throws IOException {
         try (Table table = getHBaseTable()) {
             Result result = table.get(new Get(toBytes(rowKey)).readVersions(numVersionsToFetch));
             return hbDynamicColumnObjectMapper.readValue(result, hbRecordClass);
@@ -36,10 +36,9 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
     }
 
     public R persist(HBRecord<R> record) throws IOException {
-        Put put = hbObjectMapper.writeValueAsPut(record);
-        Put putDynamic = hbDynamicColumnObjectMapper.writeValueAsPut(record);
+        Put put = hbDynamicColumnObjectMapper.writeValueAsPut(record);
         try (Table table = getHBaseTable()) {
-            table.put(Arrays.asList(put, putDynamic));
+            table.put(put);
             return record.composeRowKey();
         }
     }
@@ -48,7 +47,6 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
         List<Put> puts = new ArrayList<>(records.size());
         List<R> rowKeys = new ArrayList<>(records.size());
         for (HBRecord<R> object : records) {
-            puts.add(hbObjectMapper.writeValueAsPut(object));
             puts.add(hbDynamicColumnObjectMapper.writeValueAsPut(object));
             rowKeys.add(object.composeRowKey());
         }
