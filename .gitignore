@@ -1,0 +1,7 @@
+.idea/
+*.iml
+out/
+**/*.swp
+.gradle/
+build/
+gradle.properties
