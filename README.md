@@ -9,19 +9,27 @@ This was primarily developed to be used with big table.
 This library provides a simple way to horizontally scale your hbase/bigtable row by simply annotating a corresponding member variable of your pojo class. Example:
 
 ```
-@HBTable(name = "campaigns", families = {@Family(name = "campaign")})
-public class CampaignRecord implements HBRecord<String> {
-    @HBRowKey
-    @HBColumn(family = "campaign", column = "customerId")
-    private String customerId;
+public class Dependents implements Serializable {
+    private Integer dependId;
+}
 
-    @HBDynamicColumn(family = "campaign", qualifierField = "campaignId", alias = "id")
-    private List<Campaign> campaigns;
+@HBTable(name = "citizens", families = {@Family(name = "main"), @Family(name = "optional", versions = 10)})
+public class Citizen implements HBRecord<String> {
+    private static final String ROWKEY_DELIMITER = "#";
+    @HBRowKey
+    private String citizenId;
+    @HBColumn(family = "dependents", qualifierField = "dependId")
+    private List<Dependents> dependents; 
 ...
 }
 ```
 
-This will automatically store all `Campaigns` in the list member variable `campaigns` in the hbase table `campaign` using the following column qualifiers: `campaign:id#123123`
+This will automatically store all `Campaigns` in the list member variable `campaigns` in the hbase table `campaign` using the following column qualifiers: 
+```
+- dependents:dependId#1234
+- dependents:dependId#9876
+- dependents:dependId#952
+```
 
 ## License
 
