@@ -21,7 +21,6 @@ import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeEmptyException;
 import com.flipkart.hbaseobjectmapper.exceptions.UnsupportedFieldTypeException;
 import lombok.val;
 import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellBuilder;
 import org.apache.hadoop.hbase.CellBuilderFactory;
 import org.apache.hadoop.hbase.CellBuilderType;
 import org.apache.hadoop.hbase.HConstants;
@@ -63,16 +62,16 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     }
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Put writeValueAsPut(HBRecord<R> record) {
-        validateHBDynamicClass(((Class<T>) record.getClass()));
+        validateHBDynamicClass(record.getClass());
         Put put = super.writeValueAsPut(record);
-        for (Map.Entry<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> fe : convertRecordToMap(record).entrySet()) {
-            byte[] family = fe.getKey();
-            for (Map.Entry<byte[], NavigableMap<Long, byte[]>> e : fe.getValue().entrySet()) {
-                byte[] columnName = e.getKey();
-                NavigableMap<Long, byte[]> columnValuesVersioned = e.getValue();
+        for (val fe : convertRecordToMap(record).entrySet()) {
+            val family = fe.getKey();
+            for (val e : fe.getValue().entrySet()) {
+                val columnName = e.getKey();
+                val columnValuesVersioned = e.getValue();
                 if (columnValuesVersioned == null)
                     continue;
-                for (Map.Entry<Long, byte[]> versionAndValue : columnValuesVersioned.entrySet()) {
+                for (val versionAndValue : columnValuesVersioned.entrySet()) {
                     put.addColumn(family, columnName, versionAndValue.getKey(), versionAndValue.getValue());
                 }
             }
@@ -84,23 +83,23 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         validateHBDynamicClass(clazz);
         T t = super.readValue(result, clazz);
         if (t != null) {
-            convertMapToRecord(result.getRow(), result.getMap(), clazz, t);
+            convertMapToRecord(result.getMap(), clazz, t);
         }
         return t;
     }
 
-    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> void convertMapToRecord(byte[] rowKeyBytes, NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> map, Class<T> clazz, T record) {
+    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> void convertMapToRecord(NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> map, Class<T> clazz, T record) {
         Collection<Field> fields = getHBDynamicColumnFields0(clazz).values();
         for (Field dynamicField : fields) {
-            ParameterizedType genericTypeOfList = (ParameterizedType) dynamicField.getGenericType();
-            Class<?> genericObjectType = (Class<?>) genericTypeOfList.getActualTypeArguments()[0];
-            WrappedHBDynamicColumn hbDynamicColumn = new WrappedHBDynamicColumn(dynamicField);
+            val genericTypeOfList = (ParameterizedType) dynamicField.getGenericType();
+            val genericObjectType = (Class<?>) genericTypeOfList.getActualTypeArguments()[0];
+            val hbDynamicColumn = new WrappedHBDynamicColumn(dynamicField);
             if (hbDynamicColumn.isPresent()) {
-                NavigableMap<byte[], NavigableMap<Long, byte[]>> familyMap = map.get(hbDynamicColumn.familyBytes());
+                val familyMap = map.get(hbDynamicColumn.familyBytes());
                 if (familyMap == null || familyMap.isEmpty()) {
                     continue;
                 }
-                List<byte[]> dynamicColumnBytesList = familyMap
+                val dynamicColumnBytesList = familyMap
                         .keySet()
                         .stream()
                         .filter(bytes -> {
@@ -112,12 +111,12 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                             }
                             return false;
                         }).collect(Collectors.toList());
-                List<Serializable> dynamicListMembers = new ArrayList<>();
-                for (byte[] dynamicColumnBytes : dynamicColumnBytesList) {
-                    NavigableMap<Long, byte[]> columnVersionsMap = familyMap.get(dynamicColumnBytes);
-                    Map.Entry<Long, byte[]> lastEntry = columnVersionsMap.lastEntry();
+                val dynamicListMembers = new ArrayList<>();
+                for (val dynamicColumnBytes : dynamicColumnBytesList) {
+                    val columnVersionsMap = familyMap.get(dynamicColumnBytes);
+                    val lastEntry = columnVersionsMap.lastEntry();
                     try {
-                        Serializable deserialize = codec.deserialize(lastEntry.getValue(), genericObjectType, EMPTY_MAP);
+                        val deserialize = codec.deserialize(lastEntry.getValue(), genericObjectType, EMPTY_MAP);
                         dynamicListMembers.add(deserialize);
                     } catch (DeserializationException e) {
                         e.printStackTrace();
@@ -150,20 +149,20 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     List<String> getHBDynamicColumnNames(Field field, String columnQualifierSelector, HBRecord record) {
         try {
-            Field declaredField = record.getClass().getDeclaredField(field.getName());
+            val declaredField = record.getClass().getDeclaredField(field.getName());
             declaredField.setAccessible(true);
-            Object qualifierObject = declaredField.get(record);
+            val qualifierObject = declaredField.get(record);
             if (!Collection.class.isAssignableFrom(qualifierObject.getClass())) {
                 throw new RuntimeException("HBDynamicColumn Field must be a collection, but was " + qualifierObject.getClass().getSimpleName());
             }
-            Collection col = (Collection) qualifierObject;
-            ParameterizedType stringListType = (ParameterizedType) declaredField.getGenericType();
-            Class<?> campaign = (Class<?>) stringListType.getActualTypeArguments()[0];
-            Field qualifierField = campaign.getDeclaredField(columnQualifierSelector);
+            val col = (Collection) qualifierObject;
+            val stringListType = (ParameterizedType) declaredField.getGenericType();
+            val campaign = (Class<?>) stringListType.getActualTypeArguments()[0];
+            val qualifierField = campaign.getDeclaredField(columnQualifierSelector);
             return (List<String>) col.stream()
                     .map(o -> {
                         try {
-                            Field declaredField1 = o.getClass().getDeclaredField(qualifierField.getName());
+                            val declaredField1 = o.getClass().getDeclaredField(qualifierField.getName());
                             declaredField1.setAccessible(true);
                             return declaredField1.get(o);
                         } catch (NoSuchFieldException | IllegalAccessException e) {
@@ -180,20 +179,20 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     @Override
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Result writeValueAsResult(HBRecord<R> record) {
-        validateHBDynamicClass((Class<T>) record.getClass());
-        Result result = super.writeValueAsResult(record);
-        byte[] row = composeRowKey(record);
-        List<Cell> cells = result.listCells();
+        validateHBDynamicClass(record.getClass());
+        val result = super.writeValueAsResult(record);
+        val row = composeRowKey(record);
+        val cells = result.listCells();
         List<Cell> cellList = new ArrayList<>();
-        for (Map.Entry<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> fe : convertRecordToMap(record).entrySet()) {
-            byte[] family = fe.getKey();
-            for (Map.Entry<byte[], NavigableMap<Long, byte[]>> e : fe.getValue().entrySet()) {
-                byte[] columnName = e.getKey();
+        for (val fe : convertRecordToMap(record).entrySet()) {
+            val family = fe.getKey();
+            for (val e : fe.getValue().entrySet()) {
+                val columnName = e.getKey();
                 NavigableMap<Long, byte[]> valuesVersioned = e.getValue();
                 if (valuesVersioned == null)
                     continue;
-                for (Map.Entry<Long, byte[]> columnVersion : valuesVersioned.entrySet()) {
-                    CellBuilder cellBuilder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
+                for (val columnVersion : valuesVersioned.entrySet()) {
+                    val cellBuilder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
                     cellBuilder.setType(Cell.Type.Put).setRow(row).setFamily(family).setQualifier(columnName).setTimestamp(columnVersion.getKey()).setValue(columnVersion.getValue());
                     Cell cell = cellBuilder.build();
                     cellList.add(cell);
@@ -209,14 +208,14 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         Class<T> clazz = (Class<T>) record.getClass();
         NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> map = new TreeMap<>(Bytes.BYTES_COMPARATOR);
         int numOfFieldsToWrite = 0;
-        Collection<Field> dynamicfields = getHBDynamicColumnFields0(clazz).values();
+        val dynamicfields = getHBDynamicColumnFields0(clazz).values();
         for (Field dynamicField : dynamicfields) {
-            WrappedHBDynamicColumn hbColumn = new WrappedHBDynamicColumn(dynamicField);
+            val hbColumn = new WrappedHBDynamicColumn(dynamicField);
             if (hbColumn.isPresent()) {
                 val hbDynamicColumnNames = getHBDynamicColumnNames(dynamicField, hbColumn.columnQualifierField(), record);
                 for (val columnName : hbDynamicColumnNames) {
-                    byte[] familyName = hbColumn.familyBytes();
-                    byte[] columnNameBytes = hbColumn.columnBytes(columnName);
+                    val familyName = hbColumn.familyBytes();
+                    val columnNameBytes = hbColumn.columnBytes(columnName);
                     if (!map.containsKey(familyName)) {
                         map.put(familyName, new TreeMap<>(Bytes.BYTES_COMPARATOR));
                     }
@@ -297,9 +296,6 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         try {
             field.setAccessible(true);
             fieldValue = (Serializable) field.get(record);
-            if (!Collection.class.isAssignableFrom(fieldValue.getClass())) {
-                throw new RuntimeException("HBDynamicColumn Field must be a collection, but was " + fieldValue.getClass().getSimpleName());
-            }
             Collection col = (Collection) fieldValue;
             Serializable collect = (Serializable) col.stream()
                     .filter(o -> {
@@ -327,8 +323,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         }
     }
 
-    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> byte[] composeRowKey
-            (HBRecord<R> record) {
+    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> byte[] composeRowKey(HBRecord<R> record) {
         R rowKey;
         try {
             rowKey = record.composeRowKey();

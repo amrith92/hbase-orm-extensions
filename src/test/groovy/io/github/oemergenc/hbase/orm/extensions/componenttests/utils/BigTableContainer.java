@@ -7,7 +7,8 @@ public class BigTableContainer extends GenericContainer<BigTableContainer> {
     public static final Integer BIG_TABLE_PORT = 8080;
 
     public BigTableContainer() {
-        super("spotify/bigtable-emulator:latest");
+        super("google/cloud-sdk:latest:latest");
         withExposedPorts(BIG_TABLE_PORT);
+        withCommand("gcloud beta emulators bigtable start --host-port=0.0.0.0:" + BIG_TABLE_PORT);
     }
 }
