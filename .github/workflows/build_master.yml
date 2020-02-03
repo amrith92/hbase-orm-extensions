@@ -32,5 +32,5 @@ jobs:
             -v "$HOME:$HOME" \
             -v "$PWD:$PWD" \
             -w "$PWD" \
-            openjdk:11-jdk-alpine \
+            openjdk:11 \
             ./gradlew build
