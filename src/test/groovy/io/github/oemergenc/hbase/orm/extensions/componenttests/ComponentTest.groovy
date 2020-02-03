@@ -13,7 +13,7 @@ class ComponentTest extends AbstractComponentSpec {
         campaignActionsBigTableUtil.insertAction([customerId: 'some-customer-id', campaignId: 'some-campaign-2', recoType: 'PERSONALIZED', products: [1: "1233124"]])
 
         when:
-        def record = campaignDao.getDynamic("pfx#some-customer-id")
+        def record = campaignDao.get("pfx#some-customer-id")
 
         then:
         record
@@ -31,7 +31,7 @@ class ComponentTest extends AbstractComponentSpec {
         campaignDao.persist([campaignRecord])
 
         and:
-        def record = campaignDao.getDynamic("pfx#custId2")
+        def record = campaignDao.get("pfx#custId2")
 
         then:
         record.customerId == "custId2"

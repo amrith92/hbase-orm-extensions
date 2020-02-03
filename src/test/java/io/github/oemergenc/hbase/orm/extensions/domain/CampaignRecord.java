@@ -26,7 +26,7 @@ public class CampaignRecord implements HBRecord<String> {
     @HBColumn(family = "campaign", column = "customerId")
     private String customerId;
 
-    @HBDynamicColumn(family = "campaign", columnQualifier = "campaignId", alias = "id")
+    @HBDynamicColumn(family = "campaign", qualifierField = "campaignId", alias = "id")
     private List<Campaign> campaigns;
 
     @Override

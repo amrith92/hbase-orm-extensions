@@ -211,7 +211,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         for (Field dynamicField : dynamicfields) {
             WrappedHBDynamicColumn hbColumn = new WrappedHBDynamicColumn(dynamicField);
             if (hbColumn.isPresent()) {
-                val hbDynamicColumnNames = getHBDynamicColumnNames(dynamicField, hbColumn.columnQualifierSelector(), record);
+                val hbDynamicColumnNames = getHBDynamicColumnNames(dynamicField, hbColumn.columnQualifierField(), record);
                 for (val columnName : hbDynamicColumnNames) {
                     byte[] familyName = hbColumn.familyBytes();
                     byte[] columnNameBytes = hbColumn.columnBytes(columnName);
@@ -219,7 +219,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                         map.put(familyName, new TreeMap<>(Bytes.BYTES_COMPARATOR));
                     }
                     Map<byte[], NavigableMap<Long, byte[]>> columns = map.get(familyName);
-                    final byte[] fieldValueBytes = getListFieldValueAsBytes(record, dynamicField, hbColumn.columnQualifierSelector(), columnName, Collections.emptyMap());
+                    final byte[] fieldValueBytes = getListFieldValueAsBytes(record, dynamicField, hbColumn.columnQualifierField(), columnName, Collections.emptyMap());
                     if (fieldValueBytes == null || fieldValueBytes.length == 0) {
                         continue;
                     }

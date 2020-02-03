@@ -11,7 +11,6 @@ import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 abstract class AbstractComponentSpec extends Specification {
-    private int port
 
     protected PollingConditions pollingConditions = new PollingConditions(timeout: 10)
 

@@ -5,10 +5,6 @@ buildscript {
             url "https://plugins.gradle.org/m2/"
         }
     }
-    dependencies {
-        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.21.2"
-    }
 }
 
 plugins {
@@ -16,20 +12,31 @@ plugins {
     id 'idea'
     id 'groovy'
     id 'java-library'
-    id 'signing'
-    id 'io.codearte.nexus-staging' version '0.21.2'
+    id "maven-publish"
+    id "com.jfrog.bintray" version "1.8.4"
 }
 
-apply plugin: 'com.bmuschko.nexus'
+tasks.register("sourcesJar", Jar) {
+    from sourceSets.main.allJava
+    classifier "sources"
+}
+
+tasks.register("javadocJar", Jar) {
+    from javadoc
+    classifier "javadoc"
+}
 
 sourceCompatibility = JavaVersion.VERSION_11
 group = "io.github.oemergenc"
-version = "0.0.3"
+version = "0.0.5"
 
 repositories {
     mavenCentral()
 }
-
+ext {
+    bintrayUser = project.findProperty('bintrayUser')
+    bintrayApiKey = project.findProperty('bintrayApiKey')
+}
 dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.10'
     testCompileOnly 'org.projectlombok:lombok:1.18.10'
@@ -46,14 +53,13 @@ dependencies {
     testImplementation "org.testcontainers:spock:1.12.5"
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            // Sign POM
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            // Add required metadata to POM
-            pom.project {
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            pom {
                 name = 'hbase orm extension'
                 description = 'some extension for the hbase orm library'
                 url = 'https://github.com/oemergenc/hbase-orm-extensions'
@@ -80,21 +86,14 @@ uploadArchives {
     }
 }
 
-extraArchive {
-    sources = true
-    tests = true
-    javadoc = true
-}
-
-nexus {
-    sign = false
-}
-
-signing {
-    useGpgCmd()
-    sign configurations.archives
-}
-
-nexusStaging {
-    packageGroup = "io.github.oemergenc"
+bintray {
+    user = bintrayUser
+    key = bintrayApiKey
+    publications = ['mavenJava']
+    pkg {
+        repo = 'hbase-orm-extensions'
+        name = 'hbase-orm-extensions'
+        vcsUrl = 'https://github.com/oemergenc/hbase-orm-extensions.git'
+        licenses = ["Apache-2.0"]
+    }
 }

@@ -25,17 +25,17 @@ public @interface HBDynamicColumn {
      *
      * @return Name of field which value will be used for the column name
      */
-    String columnQualifier();
+    String qualifierField();
 
     /**
-     * Optional alias to be as prefix in the column name,if omitted the value of columnQualifier will be used
+     * Optional alias to be as prefix in the column name,if omitted the value of qualifierField will be used
      *
      * @return alias as prefix of the resulting column name
      */
     String alias() default "";
 
     /**
-     * Optional alias to be as prefix in the column name,if omitted the value of columnQualifier will be used
+     * Optional alias to be as prefix in the column name,if omitted the value of qualifierField will be used
      *
      * @return alias as prefix of the resulting column name
      */
