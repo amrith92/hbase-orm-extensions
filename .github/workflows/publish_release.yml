@@ -28,10 +28,6 @@ jobs:
       - name: Publish artifact
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          bintrayUser: ${{ secrets.bintrayUser }}
-          bintrayApiKey: ${{ secrets.bintrayApiKey }}
-          nexusUser: ${{ secrets.nexusUser }}
-          nexusPassword: ${{ secrets.nexusPassword }}
 
         # The GITHUB_REF tag comes in the format 'refs/tags/xxx'.
         # So if we split on '/' and take the 3rd value, we can get the release name.
