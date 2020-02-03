@@ -18,7 +18,7 @@ public class Citizen implements HBRecord<String> {
     private static final String ROWKEY_DELIMITER = "#";
     @HBRowKey
     private String citizenId;
-    @HBColumn(family = "dependents", qualifierField = "dependId")
+    @HBDynamicColumn(family = "dependents", qualifierField = "dependId")
     private List<Dependents> dependents; 
 ...
 }
