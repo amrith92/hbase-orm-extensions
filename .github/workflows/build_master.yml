@@ -26,4 +26,4 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build with Gradle
-        run: ./gradlew build test --debug --stacktrace
+        run: ./gradlew build test --info --stacktrace
