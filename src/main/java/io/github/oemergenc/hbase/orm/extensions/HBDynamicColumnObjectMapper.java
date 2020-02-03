@@ -83,7 +83,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>> T readValue(Result result, Class<T> clazz) {
         validateHBDynamicClass(clazz);
         T t = super.readValue(result, clazz);
-        convertMapToRecord(result.getRow(), result.getMap(), clazz, t);
+        if (t != null) {
+            convertMapToRecord(result.getRow(), result.getMap(), clazz, t);
+        }
         return t;
     }
 

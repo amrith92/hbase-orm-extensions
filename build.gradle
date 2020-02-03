@@ -28,7 +28,7 @@ tasks.register("javadocJar", Jar) {
 
 sourceCompatibility = JavaVersion.VERSION_11
 group = "io.github.oemergenc"
-version = "0.0.5"
+version = "0.0.6-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -36,6 +36,8 @@ repositories {
 ext {
     bintrayUser = project.findProperty('bintrayUser')
     bintrayApiKey = project.findProperty('bintrayApiKey')
+    nexusUser = project.findProperty('nexusUser')
+    nexusPassword = project.findProperty('nexusPassword')
 }
 dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.10'
@@ -95,5 +97,15 @@ bintray {
         name = 'hbase-orm-extensions'
         vcsUrl = 'https://github.com/oemergenc/hbase-orm-extensions.git'
         licenses = ["Apache-2.0"]
+        version {
+            gpg {
+                sign = true
+            }
+            mavenCentralSync {
+                sync = true //[Default: true] Determines whether to sync the version to Maven Central.
+                user = nexusUser
+                password = nexusPassword
+            }
+        }
     }
 }
