@@ -8,7 +8,7 @@ import spock.lang.Specification
 class DynamicMapperSpec extends Specification {
     def mapper = new HBDynamicColumnObjectMapper()
 
-    def "correct is correct"() {
+    def "Converting model class works"() {
         given:
         def campain = new Campaign("camId1", "custId2")
         def campain2 = new Campaign("camId2", "custId2")
@@ -20,26 +20,13 @@ class DynamicMapperSpec extends Specification {
         def result = mapper.writeValueAsResult(campaignRecord)
 
         and:
-        def campaignRecord1 = mapper.readValue(result, CampaignRecord.class)
+        def campaignRecordResult = mapper.readValue(result, CampaignRecord.class)
 
         then:
         result
-        campaignRecord1
-    }
-
-    def "correct is correct2"() {
-        given:
-        def campain = new Campaign("camId1", "custId2")
-        def campain2 = new Campaign("camId2", "custId2")
-        def campaignRecord = new CampaignRecord()
-        campaignRecord.setCustomerId("custId2")
-        campaignRecord.setCampaigns([campain, campain2])
-
-        when:
-        def put = mapper.writeValueAsPut(campaignRecord)
-
-        then:
-        put.familyCellMap
-        println(put.familyCellMap)
+        campaignRecordResult.customerId == "custId2"
+        campaignRecordResult.campaigns.size() == 2
+        campaignRecordResult.campaigns.collect { it.campaignId }.containsAll(["camId2", "camId1"])
+        campaignRecordResult.campaigns.collect { it.customerId }.containsAll(["custId2"])
     }
 }
