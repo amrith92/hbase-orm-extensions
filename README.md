@@ -24,7 +24,7 @@ public class Citizen implements HBRecord<String> {
 }
 ```
 
-This will automatically store all `Campaigns` in the list member variable `campaigns` in the hbase table `campaign` using the following column qualifiers: 
+This will automatically store all `Dependents` in the list member variable `dependents` in the hbase table `citizens` using the following column qualifiers: 
 ```
 - dependents:dependId#1234
 - dependents:dependId#9876
