@@ -4,7 +4,7 @@ import org.testcontainers.containers.GenericContainer;
 
 public class BigTableContainer extends GenericContainer<BigTableContainer> {
 
-    public static final Integer BIG_TABLE_PORT = 8080;
+    public static final Integer BIG_TABLE_PORT = 8086;
 
     public BigTableContainer() {
         super("google/cloud-sdk:latest:latest");

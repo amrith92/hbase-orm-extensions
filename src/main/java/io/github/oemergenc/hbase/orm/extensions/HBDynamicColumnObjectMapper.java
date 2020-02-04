@@ -19,6 +19,8 @@ import com.flipkart.hbaseobjectmapper.exceptions.NoEmptyConstructorException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeComposedException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeEmptyException;
 import com.flipkart.hbaseobjectmapper.exceptions.UnsupportedFieldTypeException;
+import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellBuilderFactory;
@@ -46,6 +48,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.EMPTY_MAP;
 
+@Slf4j
 public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     private static final BestSuitCodec CODEC = new BestSuitCodec();
@@ -155,26 +158,37 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             if (!Collection.class.isAssignableFrom(qualifierObject.getClass())) {
                 throw new RuntimeException("HBDynamicColumn Field must be a collection, but was " + qualifierObject.getClass().getSimpleName());
             }
-            val col = (Collection) qualifierObject;
+            val listOfPojos = (List<?>) qualifierObject;
             val stringListType = (ParameterizedType) declaredField.getGenericType();
             val campaign = (Class<?>) stringListType.getActualTypeArguments()[0];
             val qualifierField = campaign.getDeclaredField(columnQualifierSelector);
-            return (List<String>) col.stream()
-                    .map(o -> {
-                        try {
-                            val declaredField1 = o.getClass().getDeclaredField(qualifierField.getName());
-                            declaredField1.setAccessible(true);
-                            return declaredField1.get(o);
-                        } catch (NoSuchFieldException | IllegalAccessException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    })
-                    .collect(Collectors.toList());
+            return getValidDynamicColumnValues(listOfPojos, qualifierField);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return Collections.EMPTY_LIST;
+    }
+
+    private List<String> getValidDynamicColumnValues(List<?> dynamicColumnNameList, Field qualifierField) {
+        val validQualifierValues = new ArrayList<String>();
+        for (Object pojo : dynamicColumnNameList) {
+            try {
+                val concreteQualifierField = pojo.getClass().getDeclaredField(qualifierField.getName());
+                concreteQualifierField.setAccessible(true);
+                Object qualifierFieldValue = concreteQualifierField.get(pojo);
+                if (qualifierFieldValue != null && String.class.isAssignableFrom(qualifierFieldValue.getClass())) {
+                    validQualifierValues.add((String) qualifierFieldValue);
+                } else {
+                    throw new InvalidColumnQualifierFieldException(qualifierField.getName());
+                }
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvalidColumnQualifierFieldException ex) {
+                log.error("There was an invalid qualifier field value, which will be ignored");
+                ex.printStackTrace();
+            }
+        }
+        return validQualifierValues;
     }
 
     @Override
@@ -303,7 +317,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                             Field declaredField = o.getClass().getDeclaredField(fieldSelector);
                             declaredField.setAccessible(true);
                             String o1 = (String) declaredField.get(o);
-                            return o1.equals(elementSelector);
+                            if (o1 != null)
+                                return o1.equals(elementSelector);
+                            return false;
                         } catch (NoSuchFieldException | IllegalAccessException e) {
                             e.printStackTrace();
                         }

@@ -43,21 +43,23 @@ class ComponentTest extends AbstractComponentSpec {
         record.campaigns.collect { it.customerId }.containsAll(["custId2"])
     }
 
-    def "Throw exception"() {
+    def "Invalid entries will be logged and do not break persisting valid entries"() {
         given:
-        def campaign = campaign(customerId: "the-customer-id")
-        def campaignRecord = record(campaigns: [campaign])
+        def customerId = "the-customer-id-2"
+        def campaignInvalid = campaign(campaignId: null, customerId: customerId)
+        def campaignValid = campaign(campaignId: "valid-campaign", customerId: customerId)
+        def campaignRecord = record(customerId: customerId, campaigns: [campaignInvalid, campaignValid])
 
         when:
         campaignDao.persist([campaignRecord])
 
         and:
-        def record = campaignDao.get("pfx#the-customer-id")
+        def campaignRecordResult = campaignDao.get("pfx#" + customerId)
 
         then:
-        record.customerId == "the-customer-id"
-        record.campaigns.size() == 1
-        record.campaigns.collect { it.campaignId }.containsAll(["91828282"])
-        record.campaigns.collect { it.customerId }.containsAll(["the-customer-id"])
+        campaignRecordResult.customerId == customerId
+        campaignRecordResult.campaigns.size() == 1
+        campaignRecordResult.campaigns.collect { it.campaignId }.containsAll(["valid-campaign"])
+        campaignRecordResult.campaigns.collect { it.customerId }.containsAll([customerId])
     }
 }

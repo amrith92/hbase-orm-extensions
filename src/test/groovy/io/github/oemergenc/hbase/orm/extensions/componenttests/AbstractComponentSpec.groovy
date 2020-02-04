@@ -26,7 +26,7 @@ abstract class AbstractComponentSpec extends Specification {
     static {
         bigTableContainer.start()
 
-        def bigTablePort = bigTableContainer.getMappedPort(8080)
+        def bigTablePort = bigTableContainer.getMappedPort(8086)
         def bigTableHost = bigTableContainer.containerIpAddress + ""
 
         def bigTableProjectId = 'irrelevant'
@@ -48,7 +48,6 @@ abstract class AbstractComponentSpec extends Specification {
         def tableDescriptor = new HTableDescriptor(TableName.valueOf('campaigns'))
         tableDescriptor.addFamily(new HColumnDescriptor("campaign"))
         connection.admin.createTable(tableDescriptor)
-        connection.close()
     }
 
     def setupSpec() {
