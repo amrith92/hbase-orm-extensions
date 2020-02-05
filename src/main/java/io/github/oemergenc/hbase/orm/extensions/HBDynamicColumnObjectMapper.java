@@ -29,6 +29,7 @@ import org.apache.hadoop.hbase.CellBuilderType;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.Serializable;
@@ -178,7 +179,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 val concreteQualifierField = pojo.getClass().getDeclaredField(qualifierField.getName());
                 concreteQualifierField.setAccessible(true);
                 Object qualifierFieldValue = concreteQualifierField.get(pojo);
-                if (qualifierFieldValue != null && String.class.isAssignableFrom(qualifierFieldValue.getClass())) {
+                if (qualifierFieldValue != null
+                        && String.class.isAssignableFrom(qualifierFieldValue.getClass())
+                        && StringUtils.isNotBlank((String) qualifierFieldValue)) {
                     validQualifierValues.add((String) qualifierFieldValue);
                 } else {
                     throw new InvalidColumnQualifierFieldException(qualifierField.getName());
