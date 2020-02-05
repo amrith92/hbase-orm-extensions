@@ -35,9 +35,9 @@ public @interface HBDynamicColumn {
     String alias() default "";
 
     /**
-     * Optional alias to be as prefix in the column name,if omitted the value of qualifierField will be used
+     * Optional separator between the alias and the qualifierField value
      *
-     * @return alias as prefix of the resulting column name
+     * @return separator
      */
     String separator() default "#";
 }
