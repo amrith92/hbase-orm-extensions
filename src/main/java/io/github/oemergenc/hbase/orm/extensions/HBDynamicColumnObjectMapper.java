@@ -220,7 +220,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     @SuppressWarnings("unchecked")
     private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> convertRecordToMap(HBRecord<R> record) {
         Class<T> clazz = (Class<T>) record.getClass();
-        NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> map = new TreeMap<>(Bytes.BYTES_COMPARATOR);
+        val map = new TreeMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>>(Bytes.BYTES_COMPARATOR);
         int numOfFieldsToWrite = 0;
         val dynamicfields = getHBDynamicColumnFields0(clazz).values();
         for (Field dynamicField : dynamicfields) {
@@ -233,7 +233,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                     if (!map.containsKey(familyName)) {
                         map.put(familyName, new TreeMap<>(Bytes.BYTES_COMPARATOR));
                     }
-                    Map<byte[], NavigableMap<Long, byte[]>> columns = map.get(familyName);
+                    val columns = map.get(familyName);
                     final byte[] fieldValueBytes = getListFieldValueAsBytes(record, dynamicField, hbColumn.columnQualifierField(), columnName, Collections.emptyMap());
                     if (fieldValueBytes == null || fieldValueBytes.length == 0) {
                         continue;

@@ -91,23 +91,23 @@ class WrappedHBDynamicColumnSpec extends Specification {
         new WrongListPrimitiveHBDynamicColumnClass() | _
     }
 
-    class SimpleyQualifierClass {
+    class SimpleQualifierClass {
         String q;
     }
 
     class ValidHBDynamicColumnClass {
         @HBDynamicColumn(family = "f", qualifierField = "q")
-        List<SimpleyQualifierClass> field;
+        List<SimpleQualifierClass> field;
     }
 
     class EmptyQualifierHBDynamicColumnClass {
         @HBDynamicColumn(family = "f", qualifierField = " ")
-        List<SimpleyQualifierClass> field;
+        List<SimpleQualifierClass> field;
     }
 
     class BlankQualifierHBDynamicColumnClass {
         @HBDynamicColumn(family = "f", qualifierField = "")
-        List<SimpleyQualifierClass> field;
+        List<SimpleQualifierClass> field;
     }
 
     class ListHBDynamicColumnClass {
