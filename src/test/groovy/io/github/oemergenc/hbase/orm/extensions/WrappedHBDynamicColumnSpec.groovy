@@ -138,6 +138,5 @@ class WrappedHBDynamicColumnSpec extends Specification {
     class NoHBDynamicColumnClass {
         def field;
     }
-
 }
 
