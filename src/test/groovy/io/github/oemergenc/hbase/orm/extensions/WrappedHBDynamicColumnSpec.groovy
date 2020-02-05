@@ -86,9 +86,9 @@ class WrappedHBDynamicColumnSpec extends Specification {
         thrown(IllegalArgumentException)
 
         where:
-        clazz                                        | _
-        new WrongListPrimitiveHBDynamicColumnClass() | _
-        new WrongListPrimitiveHBDynamicColumnClass() | _
+        clazz                                          | _
+        new WrongListPrimitiveHBDynamicColumnClass()   | _
+        new WrongListComplexTypeHBDynamicColumnClass() | _
     }
 
     class SimpleQualifierClass {
@@ -138,6 +138,5 @@ class WrappedHBDynamicColumnSpec extends Specification {
     class NoHBDynamicColumnClass {
         def field;
     }
-
 }
 

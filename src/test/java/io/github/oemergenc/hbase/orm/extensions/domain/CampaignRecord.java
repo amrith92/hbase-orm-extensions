@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @HBTable(name = "campaigns", families = {@Family(name = "campaign")})
 public class CampaignRecord implements HBRecord<String> {
     public static final String ROW_KEY_DELIMITER = "#";

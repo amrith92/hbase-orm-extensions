@@ -19,6 +19,7 @@ import com.flipkart.hbaseobjectmapper.exceptions.NoEmptyConstructorException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeComposedException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeEmptyException;
 import com.flipkart.hbaseobjectmapper.exceptions.UnsupportedFieldTypeException;
+import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException;
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -28,6 +29,7 @@ import org.apache.hadoop.hbase.CellBuilderType;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.Serializable;
@@ -39,6 +41,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +101,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             val genericObjectType = (Class<?>) genericTypeOfList.getActualTypeArguments()[0];
             val hbDynamicColumn = new WrappedHBDynamicColumn(dynamicField);
             if (hbDynamicColumn.isPresent()) {
+                val dynamicListMembers = new ArrayList<>();
                 val familyMap = map.get(hbDynamicColumn.familyBytes());
                 if (familyMap == null || familyMap.isEmpty()) {
                     continue;
@@ -114,7 +118,6 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                             }
                             return false;
                         }).collect(Collectors.toList());
-                val dynamicListMembers = new ArrayList<>();
                 for (val dynamicColumnBytes : dynamicColumnBytesList) {
                     val columnVersionsMap = familyMap.get(dynamicColumnBytes);
                     val lastEntry = columnVersionsMap.lastEntry();
@@ -150,7 +153,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         return mappings;
     }
 
-    List<String> getHBDynamicColumnNames(Field field, String columnQualifierSelector, HBRecord record) {
+    List<String> getHBDynamicColumnNames(Field field, String columnQualifierField, HBRecord record) {
         try {
             val declaredField = record.getClass().getDeclaredField(field.getName());
             declaredField.setAccessible(true);
@@ -159,14 +162,14 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 throw new RuntimeException("HBDynamicColumn Field must be a collection, but was " + qualifierObject.getClass().getSimpleName());
             }
             val listOfPojos = (List<?>) qualifierObject;
-            val stringListType = (ParameterizedType) declaredField.getGenericType();
-            val campaign = (Class<?>) stringListType.getActualTypeArguments()[0];
-            val qualifierField = campaign.getDeclaredField(columnQualifierSelector);
+            val listOfPojosType = (ParameterizedType) declaredField.getGenericType();
+            val pojoClazz = (Class<?>) listOfPojosType.getActualTypeArguments()[0];
+            val qualifierField = pojoClazz.getDeclaredField(columnQualifierField);
             return getValidDynamicColumnValues(listOfPojos, qualifierField);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     private List<String> getValidDynamicColumnValues(List<?> dynamicColumnNameList, Field qualifierField) {
@@ -176,7 +179,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 val concreteQualifierField = pojo.getClass().getDeclaredField(qualifierField.getName());
                 concreteQualifierField.setAccessible(true);
                 Object qualifierFieldValue = concreteQualifierField.get(pojo);
-                if (qualifierFieldValue != null && String.class.isAssignableFrom(qualifierFieldValue.getClass())) {
+                if (qualifierFieldValue != null
+                        && String.class.isAssignableFrom(qualifierFieldValue.getClass())
+                        && StringUtils.isNotBlank((String) qualifierFieldValue)) {
                     validQualifierValues.add((String) qualifierFieldValue);
                 } else {
                     throw new InvalidColumnQualifierFieldException(qualifierField.getName());
@@ -184,7 +189,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 e.printStackTrace();
             } catch (InvalidColumnQualifierFieldException ex) {
-                log.error("There was an invalid qualifier field value, which will be ignored");
+                log.error("There was an invalid qualifier field value, which will be ignored", ex);
                 ex.printStackTrace();
             }
         }
@@ -261,11 +266,17 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         if (!Modifier.isPublic(constructor.getModifiers())) {
             throw new EmptyConstructorInaccessibleException(String.format("Empty constructor of class %s is inaccessible. It needs to be public.", clazz.getName()));
         }
-        int numOfHBColumns = 0, numOfHBRowKeys = 0;
+        int numOfHBColumns = 0;
         Map<String, Field> hbDynamicColumnFields = getHBDynamicColumnFields0(clazz);
+        val hbDynamicColumnIdentifiers = new HashSet<String>();
         for (Field field : hbDynamicColumnFields.values()) {
             WrappedHBDynamicColumn hbDynamicColumn = new WrappedHBDynamicColumn(field);
             if (hbDynamicColumn.isPresent()) {
+                if (!hbDynamicColumnIdentifiers.contains(hbDynamicColumn.toString())) {
+                    hbDynamicColumnIdentifiers.add(hbDynamicColumn.toString());
+                } else {
+                    throw new DuplicateColumnIdentifierException(hbDynamicColumn.toString());
+                }
                 validateHBDynamicColumnField(field);
                 numOfHBColumns++;
             }

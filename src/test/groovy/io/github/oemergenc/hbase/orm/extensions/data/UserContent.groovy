@@ -1,10 +1,6 @@
 package io.github.oemergenc.hbase.orm.extensions.data
 
-
-import io.github.oemergenc.hbase.orm.extensions.domain.HomeAddress
-import io.github.oemergenc.hbase.orm.extensions.domain.InvalidUserRecord
-import io.github.oemergenc.hbase.orm.extensions.domain.ValidUserRecord
-import io.github.oemergenc.hbase.orm.extensions.domain.WorkAddress
+import io.github.oemergenc.hbase.orm.extensions.domain.*
 
 class UserContent {
     def static workAddress(Map params = [:]) {
@@ -23,6 +19,14 @@ class UserContent {
         address
     }
 
+    def static address(Map params = [:]) {
+        Map values = [
+                address: "home-address",
+        ] << params
+        def address = new Address(values.address)
+        address
+    }
+
     def static validrecord(Map params = [:]) {
         Map values = [
                 userId       : "the-user-id",
@@ -35,9 +39,9 @@ class UserContent {
     def static invalidrecord(Map params = [:]) {
         Map values = [
                 userId       : "the-user-id",
-                workAddresses: [workAddress(params)],
-                homeAddresses: [homeAddress(params)],
+                workAddresses: [address(params)],
+                homeAddresses: [address(params)],
         ] << params
-        new InvalidUserRecord(values.customerId, values.campaigns)
+        new InvalidUserRecord(values.userId, values.workAddresses, values.homeAddresses)
     }
 }

@@ -3,11 +3,12 @@ package io.github.oemergenc.hbase.orm.extensions.componenttests
 import io.github.oemergenc.hbase.orm.extensions.dao.CampaignDao
 import io.github.oemergenc.hbase.orm.extensions.domain.Campaign
 import io.github.oemergenc.hbase.orm.extensions.domain.CampaignRecord
+import spock.lang.Unroll
 
 import static io.github.oemergenc.hbase.orm.extensions.data.CampaignContent.campaign
 import static io.github.oemergenc.hbase.orm.extensions.data.CampaignContent.record
 
-class ComponentTest extends AbstractComponentSpec {
+class CampaignComponentTest extends AbstractComponentSpec {
     def campaignDao = new CampaignDao(bigTableHelper.connect())
 
     def "correct is correct"() {
@@ -43,10 +44,11 @@ class ComponentTest extends AbstractComponentSpec {
         record.campaigns.collect { it.customerId }.containsAll(["custId2"])
     }
 
+    @Unroll
     def "Invalid entries will be logged and do not break persisting valid entries"() {
         given:
         def customerId = "the-customer-id-2"
-        def campaignInvalid = campaign(campaignId: null, customerId: customerId)
+        def campaignInvalid = campaign(campaignId: campaignId, customerId: customerId)
         def campaignValid = campaign(campaignId: "valid-campaign", customerId: customerId)
         def campaignRecord = record(customerId: customerId, campaigns: [campaignInvalid, campaignValid])
 
@@ -61,5 +63,11 @@ class ComponentTest extends AbstractComponentSpec {
         campaignRecordResult.campaigns.size() == 1
         campaignRecordResult.campaigns.collect { it.campaignId }.containsAll(["valid-campaign"])
         campaignRecordResult.campaigns.collect { it.customerId }.containsAll([customerId])
+
+        where:
+        campaignId | _
+        null       | _
+        ""         | _
+        "   "      | _
     }
 }
