@@ -101,6 +101,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             val genericObjectType = (Class<?>) genericTypeOfList.getActualTypeArguments()[0];
             val hbDynamicColumn = new WrappedHBDynamicColumn(dynamicField);
             if (hbDynamicColumn.isPresent()) {
+                val dynamicListMembers = new ArrayList<>();
                 val familyMap = map.get(hbDynamicColumn.familyBytes());
                 if (familyMap == null || familyMap.isEmpty()) {
                     continue;
@@ -117,7 +118,6 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                             }
                             return false;
                         }).collect(Collectors.toList());
-                val dynamicListMembers = new ArrayList<>();
                 for (val dynamicColumnBytes : dynamicColumnBytesList) {
                     val columnVersionsMap = familyMap.get(dynamicColumnBytes);
                     val lastEntry = columnVersionsMap.lastEntry();

@@ -8,6 +8,22 @@ This was primarily developed to be used with big table.
 ## Usage
 This library provides a simple way to horizontally scale your hbase/bigtable row by simply annotating a corresponding member variable of your pojo class. Example:
 
+Add the following dependencies to your project:
+
+Gradle:
+```
+implementation group: 'io.github.oemergenc', name: 'hbase-orm-extensions', version: '0.0.7'
+```
+Maven:
+```
+<dependency>
+  <groupId>io.github.oemergenc</groupId>
+  <artifactId>hbase-orm-extensions</artifactId>
+  <version>0.0.7</version>
+</dependency>
+```
+
+Annotate your class according to the following example:
 ```
 public class Dependents implements Serializable {
     private Integer dependId;
