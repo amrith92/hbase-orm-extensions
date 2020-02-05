@@ -100,7 +100,7 @@ class WrappedHBDynamicColumn {
 
     @Override
     public String toString() {
-        return String.format("%s:%s", family, columnQualifierField);
+        return String.format("%s:%s", family, getPrefix());
     }
 
     public boolean isPresent() {
