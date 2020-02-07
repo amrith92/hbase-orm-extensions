@@ -23,6 +23,7 @@ import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentif
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import net.vidageek.mirror.dsl.Mirror;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellBuilderFactory;
 import org.apache.hadoop.hbase.CellBuilderType;
@@ -33,6 +34,7 @@ import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -140,15 +142,14 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Map<String, Field> getHBDynamicColumnFields0(Class<T> clazz) {
         Map<String, Field> mappings = new LinkedHashMap<>();
+        List<Annotation> annotations = new Mirror().on(clazz).reflectAll().annotations().atClass();
         Class<?> thisClass = clazz;
-        while (thisClass != null && thisClass != Object.class) {
+        while (clazz != null && thisClass != Object.class) {
             for (Field field : thisClass.getDeclaredFields()) {
                 if (new WrappedHBDynamicColumn(field).isPresent()) {
                     mappings.put(field.getName(), field);
                 }
             }
-            Class<?> parentClass = thisClass.getSuperclass();
-            thisClass = parentClass.isAnnotationPresent(MappedSuperClass.class) ? parentClass : null;
         }
         return mappings;
     }

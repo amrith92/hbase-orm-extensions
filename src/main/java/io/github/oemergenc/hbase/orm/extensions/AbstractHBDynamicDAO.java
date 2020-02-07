@@ -35,6 +35,26 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
         }
     }
 
+    public T getOnGet(Get get) throws IOException {
+        try (Table table = getHBaseTable()) {
+            Result result = table.get(get);
+            return hbDynamicColumnObjectMapper.readValue(result, hbRecordClass);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public List<T> getOnGets(List<Get> gets) throws IOException {
+        List<T> records = new ArrayList<>(gets.size());
+        try (Table table = getHBaseTable()) {
+            Result[] results = table.get(gets);
+            for (Result result : results) {
+                records.add(hbDynamicColumnObjectMapper.readValue(result, hbRecordClass));
+            }
+        }
+        return records;
+    }
+
+
     public R persist(HBRecord<R> record) throws IOException {
         Put put = hbDynamicColumnObjectMapper.writeValueAsPut(record);
         try (Table table = getHBaseTable()) {

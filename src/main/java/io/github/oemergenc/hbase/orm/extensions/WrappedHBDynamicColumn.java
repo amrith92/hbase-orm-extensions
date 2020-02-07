@@ -57,8 +57,9 @@ class WrappedHBDynamicColumn {
     }
 
     private void validateQualifierField(Field field) {
-        ParameterizedType stringListType = (ParameterizedType) field.getGenericType();
-        Type actualTypeArgument = stringListType.getActualTypeArguments()[0];
+
+        ParameterizedType listType = (ParameterizedType) field.getGenericType();
+        Type actualTypeArgument = listType.getActualTypeArguments()[0];
         if (actualTypeArgument instanceof Class) {
             Class<?> qualifierObjectClassType = (Class<?>) actualTypeArgument;
             try {

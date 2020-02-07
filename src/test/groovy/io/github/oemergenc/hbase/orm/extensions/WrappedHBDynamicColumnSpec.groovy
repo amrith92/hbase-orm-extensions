@@ -1,5 +1,6 @@
 package io.github.oemergenc.hbase.orm.extensions
 
+
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -75,6 +76,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         new BlankQualifierHBDynamicColumnClass() | _
     }
 
+    @Unroll
     def "wrong list field type throws exception"() {
         given:
         def field = clazz.getClass().getDeclaredField("field")
