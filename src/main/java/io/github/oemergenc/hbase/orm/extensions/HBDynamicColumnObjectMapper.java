@@ -34,7 +34,6 @@ import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.Serializable;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -65,8 +64,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     }
 
     public HBDynamicColumnObjectMapper() {
-        super(CODEC);
-        this.codec = CODEC;
+        this(CODEC);
     }
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Put writeValueAsPut(HBRecord<R> record) {
@@ -142,14 +140,15 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Map<String, Field> getHBDynamicColumnFields0(Class<T> clazz) {
         Map<String, Field> mappings = new LinkedHashMap<>();
-        List<Annotation> annotations = new Mirror().on(clazz).reflectAll().annotations().atClass();
         Class<?> thisClass = clazz;
-        while (clazz != null && thisClass != Object.class) {
+        while (thisClass != null && thisClass != Object.class) {
             for (Field field : thisClass.getDeclaredFields()) {
                 if (new WrappedHBDynamicColumn(field).isPresent()) {
                     mappings.put(field.getName(), field);
                 }
             }
+            Class<?> parentClass = thisClass.getSuperclass();
+            thisClass = parentClass.isAnnotationPresent(MappedSuperClass.class) ? parentClass : null;
         }
         return mappings;
     }

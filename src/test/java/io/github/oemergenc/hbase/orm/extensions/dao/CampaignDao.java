@@ -19,7 +19,7 @@ public class CampaignDao extends AbstractHBDynamicDAO<String, CampaignRecord> {
     public Optional<CampaignRecord> getCampaign(String customerId, String campaignId) {
         try {
             Get get = getGet(customerId);
-            get.addColumn("campaignId".getBytes(), ("#" + campaignId).getBytes());
+            get.addColumn("campaign".getBytes(), ("id#" + campaignId).getBytes());
             return Optional.ofNullable(getOnGet(get));
         } catch (IOException e) {
             log.error("There was an error while trying to get campaign data of customer", e);

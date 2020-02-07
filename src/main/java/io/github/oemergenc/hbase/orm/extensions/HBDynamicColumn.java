@@ -28,7 +28,7 @@ public @interface HBDynamicColumn {
     String qualifierField();
 
     /**
-     * Optional alias to be as prefix in the column name,if omitted the value of qualifierField will be used
+     * Optional alias to be used as prefix in the column name. If omitted the value of qualifierField will be used
      *
      * @return alias as prefix of the resulting column name
      */

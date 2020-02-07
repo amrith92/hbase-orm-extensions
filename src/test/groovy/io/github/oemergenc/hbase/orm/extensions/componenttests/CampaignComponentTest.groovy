@@ -85,7 +85,7 @@ class CampaignComponentTest extends AbstractComponentSpec {
         campaignDao.persist([campaignRecord])
 
         and:
-        def record = campaignDao.getCampaign("pfx#custId2", "campId3")
+        def record = campaignDao.getCampaign("pfx#custId2", "camId3")
 
         then:
         record.isPresent()
