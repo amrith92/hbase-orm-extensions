@@ -70,4 +70,28 @@ class CampaignComponentTest extends AbstractComponentSpec {
         ""         | _
         "   "      | _
     }
+
+    def "Retrieving a specific campaign works"() {
+        def customerId = "custId2"
+        given:
+        def campain = new Campaign("camId1", customerId)
+        def campain2 = new Campaign("camId2", customerId)
+        def campain3 = new Campaign("camId3", customerId)
+        def campaignRecord = new CampaignRecord()
+        campaignRecord.setCustomerId(customerId)
+        campaignRecord.setCampaigns([campain, campain2, campain3])
+
+        when:
+        campaignDao.persist([campaignRecord])
+
+        and:
+        def record = campaignDao.getCampaign("pfx#custId2", "camId3")
+
+        then:
+        record.isPresent()
+        record.get().customerId == customerId
+        record.get().campaigns.size() == 1
+        record.get().campaigns.collect { it.campaignId }.containsAll(["camId3"])
+        record.get().campaigns.collect { it.customerId }.containsAll([customerId])
+    }
 }

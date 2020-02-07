@@ -23,6 +23,7 @@ import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentif
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import net.vidageek.mirror.dsl.Mirror;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellBuilderFactory;
 import org.apache.hadoop.hbase.CellBuilderType;
@@ -63,8 +64,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     }
 
     public HBDynamicColumnObjectMapper() {
-        super(CODEC);
-        this.codec = CODEC;
+        this(CODEC);
     }
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>> Put writeValueAsPut(HBRecord<R> record) {

@@ -11,7 +11,7 @@ import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 abstract class AbstractComponentSpec extends Specification {
-
+    @Shared
     protected PollingConditions pollingConditions = new PollingConditions(timeout: 10)
 
     @Shared
@@ -23,11 +23,14 @@ abstract class AbstractComponentSpec extends Specification {
     @Shared
     static CampaignActionsBigTableUtil campaignActionsBigTableUtil
 
+    static connection;
+
     static {
         bigTableContainer.start()
 
         def bigTablePort = bigTableContainer.getMappedPort(8086)
         def bigTableHost = bigTableContainer.containerIpAddress + ""
+        connection = bigTableHost + ":" + bigTablePort
 
         def bigTableProjectId = 'irrelevant'
         def bigTableInstanceId = 'irrelevant'
