@@ -25,16 +25,22 @@ class BigTableHelper {
 
         conf = BigtableConfiguration.configure(bigTableProjectId, bigTableInstanceId)
 
-        if (System.getenv("BIGTABLE_EMULATOR_HOST") == null) {
-            println("The bigtable emulator env var is not defined")
-            conf.set(BigtableOptionsFactory.BIGTABLE_ADMIN_HOST_KEY, bigTableHost + ":" + bigTablePort)
-            conf.set(BigtableOptionsFactory.BIGTABLE_EMULATOR_HOST_KEY, bigTableHost + ":" + bigTablePort)
-            conf.set(BigtableOptionsFactory.BIGTABLE_HOST_KEY, bigTableHost)
-            conf.set(BigtableOptionsFactory.BIGTABLE_PORT_KEY, bigTablePort as String)
-            conf.set(BigtableOptionsFactory.BIGTABLE_USE_PLAINTEXT_NEGOTIATION, "true")
-            conf.set(BigtableOptionsFactory.PROJECT_ID_KEY, bigTableProjectId)
-            conf.set(BigtableOptionsFactory.INSTANCE_ID_KEY, bigTableInstanceId)
-        }
+        conf.set(BigtableOptionsFactory.BIGTABLE_ADMIN_HOST_KEY, bigTableHost + ":" + bigTablePort)
+        conf.set(BigtableOptionsFactory.BIGTABLE_EMULATOR_HOST_KEY, bigTableHost + ":" + bigTablePort)
+        conf.set(BigtableOptionsFactory.BIGTABLE_HOST_KEY, bigTableHost)
+        conf.set(BigtableOptionsFactory.BIGTABLE_PORT_KEY, bigTablePort as String)
+        conf.set(BigtableOptionsFactory.BIGTABLE_USE_PLAINTEXT_NEGOTIATION, "true")
+        conf.set(BigtableOptionsFactory.PROJECT_ID_KEY, bigTableProjectId)
+        conf.set(BigtableOptionsFactory.INSTANCE_ID_KEY, bigTableInstanceId)
+        connection = BigtableConfiguration.connect(conf)
+    }
+
+    BigTableHelper(final String bigTableProjectId,
+                   final String bigTableInstanceId) {
+        this.bigTableProjectId = bigTableProjectId
+        this.bigTableInstanceId = bigTableInstanceId
+
+        conf = BigtableConfiguration.configure(bigTableProjectId, bigTableInstanceId)
         connection = BigtableConfiguration.connect(conf)
     }
 

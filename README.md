@@ -1,5 +1,5 @@
 # HBase ORM Extensions
-
+![Build master branch](https://github.com/oemergenc/hbase-orm-extensions/workflows/Build%20master%20branch/badge.svg?branch=master)
 ## Introduction
 Some extensions for the nice hbase-orm library, you can find the library here: [hbase-orm](https://flipkart-incubator.github.io/hbase-orm/)
 

@@ -23,31 +23,18 @@ abstract class AbstractComponentSpec extends Specification {
     @Shared
     static CampaignActionsBigTableUtil campaignActionsBigTableUtil
 
-    static connection;
-
     static {
-        bigTableContainer.start()
-
-        def bigTablePort = bigTableContainer.getMappedPort(8086)
-        def bigTableHost = bigTableContainer.containerIpAddress + ""
-        connection = bigTableHost + ":" + bigTablePort
-
         def bigTableProjectId = 'irrelevant'
         def bigTableInstanceId = 'irrelevant'
 
-        System.setProperty('bigtable.port', bigTablePort as String)
-        System.setProperty('bigtable.host', bigTableHost)
-        System.setProperty('bigtable.projectId', bigTableProjectId)
-        System.setProperty('bigtable.instanceId', bigTableInstanceId)
-
-        bigTableHelper = new BigTableHelper(bigTablePort,
-                bigTableHost,
-                bigTableProjectId,
-                bigTableInstanceId)
+        if (System.getenv("BIGTABLE_EMULATOR_HOST") == null) {
+            bigTableHelper = onRunOnCiServer(bigTableProjectId, bigTableInstanceId)
+        } else {
+            bigTableHelper = onRunOnDev(bigTableProjectId, bigTableInstanceId)
+        }
+       
         campaignActionsBigTableUtil = new CampaignActionsBigTableUtil(bigTableHelper)
-
         def connection = bigTableHelper.connect()
-
         def tableDescriptor = new HTableDescriptor(TableName.valueOf('campaigns'))
         tableDescriptor.addFamily(new HColumnDescriptor("campaign"))
         connection.admin.createTable(tableDescriptor)
@@ -68,4 +55,28 @@ abstract class AbstractComponentSpec extends Specification {
     def cleanupSpec() {
 
     }
+
+    public static BigTableHelper onRunOnCiServer(String bigTableProjectId, String bigTableInstanceId) {
+        bigTableContainer.start()
+
+        def bigTablePort = bigTableContainer.getMappedPort(8086)
+        def bigTableHost = bigTableContainer.containerIpAddress + ""
+
+        System.setProperty('bigtable.port', bigTablePort as String)
+        System.setProperty('bigtable.host', bigTableHost)
+        System.setProperty('bigtable.projectId', bigTableProjectId)
+        System.setProperty('bigtable.instanceId', bigTableInstanceId)
+
+        bigTableHelper = new BigTableHelper(bigTablePort,
+                bigTableHost,
+                bigTableProjectId,
+                bigTableInstanceId)
+        bigTableHelper
+    }
+
+    public static BigTableHelper onRunOnDev(String bigTableProjectId, String bigTableInstanceId) {
+        bigTableHelper = new BigTableHelper(bigTableProjectId, bigTableInstanceId)
+        bigTableHelper
+    }
+
 }
