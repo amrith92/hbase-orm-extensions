@@ -27,7 +27,7 @@ jobs:
 
       - name: Build with Gradle
         env:
-          BIGTABLE_EMULATOR_HOST: localhost:8086
+          BIGTABLE_EMULATOR_HOST: 127.0.0.1:8086
         run: |
           docker run -i --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \
