@@ -13,7 +13,7 @@ jobs:
       bigtable:
         image: shopify/bigtable-emulator
         env:
-          BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
+          BIGTABLE_EMULATOR_HOST: bigtable:9035
         ports:
           - 9035:9035
 
@@ -31,6 +31,6 @@ jobs:
 
       - name: Build with Gradle
         env:
-          BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
+          BIGTABLE_EMULATOR_HOST: bigtable:9035
         run: |
           ./gradlew build --info --stacktrace
