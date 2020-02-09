@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  container-job:
+  build-master:
     runs-on: ubuntu-latest
     container: openjdk:11
     services:

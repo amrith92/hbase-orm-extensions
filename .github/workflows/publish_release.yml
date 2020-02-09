@@ -7,15 +7,18 @@ on:
 jobs:
   publish-release:
     runs-on: ubuntu-latest
+    container: openjdk:11
+    services:
+      bigtable:
+        image: shopify/bigtable-emulator
+        env:
+          BIGTABLE_EMULATOR_HOST: bigtable:9035
+        ports:
+          - 9035:9035
 
     steps:
-      - name: Check out Git repository
+      - name: Checkout latest code
         uses: actions/checkout@v2
-
-      - name: Install Java and Maven
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
 
       - name: Setup build cache
         uses: actions/cache@v1
@@ -27,6 +30,7 @@ jobs:
 
       - name: Publish artifact
         env:
+          BIGTABLE_EMULATOR_HOST: bigtable:9035
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BINTRAYUSER: ${{ secrets.bintrayUser }}
           BINTRAYAPIKEY: ${{ secrets.bintrayApiKey }}
@@ -39,4 +43,4 @@ jobs:
           NEW_VERSION=$(echo "${GITHUB_REF}" | cut -d "/" -f3)
           echo "New version: ${NEW_VERSION}"
           echo "Github username: ${GITHUB_ACTOR}"
-          ./gradlew -Pversion=${NEW_VERSION} -PnexusUser=${NEXUSUSER} -PnexusPassword=${NEXUSPASSWORD} -PbintrayApiKey=${BINTRAYAPIKEY} -PbintrayUser=${BINTRAYUSER} bintrayUpload -x test --info --stacktrace
+          ./gradlew -Pversion=${NEW_VERSION} -PnexusUser=${NEXUSUSER} -PnexusPassword=${NEXUSPASSWORD} -PbintrayApiKey=${BINTRAYAPIKEY} -PbintrayUser=${BINTRAYUSER} bintrayUpload --info --stacktrace
