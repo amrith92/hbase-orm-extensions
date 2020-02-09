@@ -6,32 +6,31 @@ on:
       - master
 
 jobs:
-  build:
-    container-job:
-      runs-on: ubuntu-latest
-      container: openjdk:11
-      services:
-        bigtable:
-          image: shopify/bigtable-emulator
-          env:
-            BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
-          ports:
-            - 9035:9035
+  container-job:
+    runs-on: ubuntu-latest
+    container: openjdk:11
+    services:
+      bigtable:
+        image: shopify/bigtable-emulator
+        env:
+          BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
+        ports:
+          - 9035:9035
 
-      steps:
-        - name: Checkout latest code
-          uses: actions/checkout@v2
+    steps:
+      - name: Checkout latest code
+        uses: actions/checkout@v2
 
-        - name: Setup build cache
-          uses: actions/cache@v1
-          with:
-            path: ~/.gradle/caches
-            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-            restore-keys: |
-              ${{ runner.os }}-gradle-
+      - name: Setup build cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-        - name: Build with Gradle
-          env:
-            BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
-          run: |
-            ./gradlew build --info --stacktrace
+      - name: Build with Gradle
+        env:
+          BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
+        run: |
+          ./gradlew build --info --stacktrace
