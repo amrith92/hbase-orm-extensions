@@ -7,39 +7,31 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup Bigtable
-        uses: google/cloud-sdk:latest:latest
-        env:
-          BIGTABLE_EMULATOR_HOST: 127.0.0.1:8086
-        run: |
-          gcloud beta emulators bigtable start --host-port=0.0.0.0:8086
+    container-job:
+      runs-on: ubuntu-latest
+      container: openjdk:11
+      services:
+        bigtable:
+          image: shopify/bigtable-emulator
+          env:
+            BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
+          ports:
+            - 9035:9035
 
-      - name: Checkout latest code
-        uses: actions/checkout@v2
+      steps:
+        - name: Checkout latest code
+          uses: actions/checkout@v2
 
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
+        - name: Setup build cache
+          uses: actions/cache@v1
+          with:
+            path: ~/.gradle/caches
+            key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+            restore-keys: |
+              ${{ runner.os }}-gradle-
 
-      - name: Setup build cache
-        uses: actions/cache@v1
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Build with Gradle
-        env:
-          BIGTABLE_EMULATOR_HOST: 127.0.0.1:8086
-        run: |
-          docker run -i --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v "$HOME:$HOME" \
-            -v "$PWD:$PWD" \
-            -w "$PWD" \
-            openjdk:11 \
+        - name: Build with Gradle
+          env:
+            BIGTABLE_EMULATOR_HOST: 127.0.0.1:9035
+          run: |
             ./gradlew build --info --stacktrace
