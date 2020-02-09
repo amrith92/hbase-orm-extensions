@@ -23,7 +23,6 @@ import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentif
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import net.vidageek.mirror.dsl.Mirror;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellBuilderFactory;
 import org.apache.hadoop.hbase.CellBuilderType;

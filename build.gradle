@@ -44,7 +44,6 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok:1.18.10'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.10'
 
-    implementation group: 'net.vidageek', name: 'mirror', version: '1.6.1'
     implementation group: 'com.google.cloud.bigtable', name: 'bigtable-hbase-2.x-shaded', version: '1.4.0'
     implementation(group: 'com.flipkart', name: 'hbase-object-mapper', version: '1.13') {
         exclude group: 'org.apache.hbase', module: 'hbase-client'
