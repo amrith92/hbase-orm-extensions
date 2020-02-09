@@ -32,7 +32,7 @@ abstract class AbstractComponentSpec extends Specification {
         } else {
             bigTableHelper = onRunOnDev(bigTableProjectId, bigTableInstanceId)
         }
-       
+
         campaignActionsBigTableUtil = new CampaignActionsBigTableUtil(bigTableHelper)
         def connection = bigTableHelper.connect()
         def tableDescriptor = new HTableDescriptor(TableName.valueOf('campaigns'))
