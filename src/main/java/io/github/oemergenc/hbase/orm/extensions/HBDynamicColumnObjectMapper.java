@@ -157,14 +157,16 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             val declaredField = record.getClass().getDeclaredField(field.getName());
             declaredField.setAccessible(true);
             val qualifierObject = declaredField.get(record);
-            if (!Collection.class.isAssignableFrom(qualifierObject.getClass())) {
-                throw new RuntimeException("HBDynamicColumn Field must be a collection, but was " + qualifierObject.getClass().getSimpleName());
+            if (qualifierObject != null) {
+                if (!Collection.class.isAssignableFrom(qualifierObject.getClass())) {
+                    throw new RuntimeException("HBDynamicColumn Field must be a collection, but was " + qualifierObject.getClass().getSimpleName());
+                }
+                val listOfPojos = (List<?>) qualifierObject;
+                val listOfPojosType = (ParameterizedType) declaredField.getGenericType();
+                val pojoClazz = (Class<?>) listOfPojosType.getActualTypeArguments()[0];
+                val qualifierField = pojoClazz.getDeclaredField(columnQualifierField);
+                return getValidDynamicColumnValues(listOfPojos, qualifierField);
             }
-            val listOfPojos = (List<?>) qualifierObject;
-            val listOfPojosType = (ParameterizedType) declaredField.getGenericType();
-            val pojoClazz = (Class<?>) listOfPojosType.getActualTypeArguments()[0];
-            val qualifierField = pojoClazz.getDeclaredField(columnQualifierField);
-            return getValidDynamicColumnValues(listOfPojos, qualifierField);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
