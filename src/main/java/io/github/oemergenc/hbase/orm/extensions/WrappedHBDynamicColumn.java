@@ -1,5 +1,6 @@
 package io.github.oemergenc.hbase.orm.extensions;
 
+import com.flipkart.hbaseobjectmapper.DynamicQualifier;
 import com.flipkart.hbaseobjectmapper.exceptions.FieldNotMappedToHBaseColumnException;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hbase.thirdparty.io.netty.util.internal.StringUtil;
@@ -14,7 +15,8 @@ import java.util.Collection;
  * A wrapper class for {@link HBDynamicColumn}
  */
 class WrappedHBDynamicColumn {
-    private final String family, columnQualifierField;
+    private final String family;
+    private final DynamicQualifier columnQualifierField;
     private final Class<? extends Annotation> annotationClass;
     private final Field field;
     private final String alias;
@@ -33,14 +35,13 @@ class WrappedHBDynamicColumn {
             if (!Collection.class.isAssignableFrom(field.getType())) {
                 throw new IllegalArgumentException("HBDynamicColumn field must be a collection, but was " + field.getType());
             }
-            columnQualifierField = hbColumn.qualifierField();
-            if (StringUtil.isNullOrEmpty(columnQualifierField)) {
-                throw new IllegalArgumentException("qualifierField of HBDynamicColumn cannot be empty or null");
-            }
+            columnQualifierField = hbColumn.qualifier();
+            validateQualifierParts(columnQualifierField);
             validateQualifierField(field);
+            validateAlias(hbColumn.alias());
             isPresent = true;
             family = hbColumn.family();
-            alias = (!hbColumn.alias().equals("") ? hbColumn.alias() : hbColumn.qualifierField());
+            alias = hbColumn.alias();
             seperator = hbColumn.separator();
             annotationClass = HBDynamicColumn.class;
         } else {
@@ -56,6 +57,20 @@ class WrappedHBDynamicColumn {
         }
     }
 
+    private void validateQualifierParts(DynamicQualifier columnQualifierField) {
+        for (String part : columnQualifierField.parts()) {
+            if (StringUtil.isNullOrEmpty(part)) {
+                throw new IllegalArgumentException("parts of DynamicQualifier cannot be empty or null");
+            }
+        }
+    }
+
+    private void validateAlias(String alias) {
+        if (StringUtil.isNullOrEmpty(alias)) {
+            throw new IllegalArgumentException("alias of HBDynamicColumn cannot be empty or null");
+        }
+    }
+
     private void validateQualifierField(Field field) {
 
         ParameterizedType listType = (ParameterizedType) field.getGenericType();
@@ -63,9 +78,12 @@ class WrappedHBDynamicColumn {
         if (actualTypeArgument instanceof Class) {
             Class<?> qualifierObjectClassType = (Class<?>) actualTypeArgument;
             try {
-                Field declaredField = qualifierObjectClassType.getDeclaredField(columnQualifierField);
-                if (!declaredField.getType().equals(String.class)) {
-                    throw new IllegalArgumentException("Generic Type of HBDynamicColumn must have a field with name " + columnQualifierField + " of type string, but was " + declaredField.getType());
+                String[] parts = columnQualifierField.parts();
+                for (String part : parts) {
+                    Field declaredField = qualifierObjectClassType.getDeclaredField(part);
+                    if (!declaredField.getType().equals(String.class)) {
+                        throw new IllegalArgumentException("The generic Type of HBDynamicColumn must have a field with name " + part + " of type string, but was " + declaredField.getType());
+                    }
                 }
             } catch (NoSuchFieldException e) {
                 throw new IllegalArgumentException("Generic Type of HBDynamicColumn must have a field with name " + columnQualifierField + " but was not found");
@@ -83,8 +101,8 @@ class WrappedHBDynamicColumn {
         return Bytes.toBytes(family);
     }
 
-    public String columnQualifierField() {
-        return columnQualifierField;
+    public String[] columnQualifierParts() {
+        return columnQualifierField.parts();
     }
 
     public byte[] columnBytes(String columName) {

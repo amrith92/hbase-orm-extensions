@@ -1,5 +1,6 @@
 package io.github.oemergenc.hbase.orm.extensions.domain;
 
+import com.flipkart.hbaseobjectmapper.DynamicQualifier;
 import com.flipkart.hbaseobjectmapper.Family;
 import com.flipkart.hbaseobjectmapper.HBColumn;
 import com.flipkart.hbaseobjectmapper.HBRecord;
@@ -22,10 +23,14 @@ public class ValidUserRecord implements HBRecord<String> {
     @HBColumn(family = "optional", column = "userId")
     private String userId;
 
-    @HBDynamicColumn(family = "address", qualifierField = "workAddress")
+    @HBDynamicColumn(family = "address",
+            alias = "workAddress",
+            qualifier = @DynamicQualifier(parts = {"workAddress"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
     private List<WorkAddress> workAddresses;
 
-    @HBDynamicColumn(family = "address", qualifierField = "homeAddress")
+    @HBDynamicColumn(family = "address",
+            alias = "homeAddress",
+            qualifier = @DynamicQualifier(parts = {"homeAddress"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
     private List<HomeAddress> homeAddresses;
 
     @Override

@@ -1,5 +1,7 @@
 package io.github.oemergenc.hbase.orm.extensions;
 
+import com.flipkart.hbaseobjectmapper.DynamicQualifier;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -14,25 +16,25 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface HBDynamicColumn {
 
     /**
-     * Name of HBase column family
+     * Required: Name of HBase column family
      *
      * @return Name of HBase column family
      */
     String family();
 
     /**
-     * Name of the field which values will be use for the  column
+     * Optional: Name of the field which values will be use for the  column.
      *
      * @return Name of field which value will be used for the column name
      */
-    String qualifierField();
+    DynamicQualifier qualifier();
 
     /**
-     * Optional alias to be used as prefix in the column name. If omitted the value of qualifierField will be used
+     * alias to be used as prefix in the column name. If omitted the value of qualifierField will be used
      *
      * @return alias as prefix of the resulting column name
      */
-    String alias() default "";
+    String alias();
 
     /**
      * Optional separator between the alias and the qualifierField value
