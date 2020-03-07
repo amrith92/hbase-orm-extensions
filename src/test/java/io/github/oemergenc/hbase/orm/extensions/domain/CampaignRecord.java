@@ -29,7 +29,7 @@ public class CampaignRecord implements HBRecord<String> {
 
     @HBDynamicColumn(family = "campaign",
             alias = "id",
-            qualifier = @DynamicQualifier(parts = {"campaignId"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+            qualifier = @DynamicQualifier(parts = {"campaignId"}))
     private List<Campaign> campaigns;
 
     @Override

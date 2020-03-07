@@ -10,18 +10,18 @@ class RecipeComponentTest extends AbstractComponentSpec {
 
     def "Store and reading dynamic column works"() {
         given:
-        def tile = new RecipeTile("customerId", "campaignId", 1, "recipeId", "<html/>", "www.detail.url", "trending")
+        def tile = new RecipeTile("customerId", "campaignId1234", "1", "recipeId", "<html/>", "www.detail.url", "trending")
         def campaignRecord = new RecipeCampaignActionRecord()
-        campaignRecord.setCustomerId("custId2")
+        campaignRecord.setCustomerPid("custId2")
         campaignRecord.setRecipeTiles([tile])
 
         when:
         recipeCampaignDao.persist([campaignRecord])
 
         and:
-        def record = recipeCampaignDao.get("cp#campaignId:1")
+        def record = recipeCampaignDao.get("custId2")
 
         then:
-        record.customerId == "custId2"
+        record.customerPid == "custId2"
     }
 }

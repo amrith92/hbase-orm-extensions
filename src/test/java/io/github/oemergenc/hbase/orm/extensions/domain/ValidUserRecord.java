@@ -23,14 +23,10 @@ public class ValidUserRecord implements HBRecord<String> {
     @HBColumn(family = "optional", column = "userId")
     private String userId;
 
-    @HBDynamicColumn(family = "address",
-            alias = "workAddress",
-            qualifier = @DynamicQualifier(parts = {"workAddress"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+    @HBDynamicColumn(family = "address", alias = "workAddress", qualifier = @DynamicQualifier(parts = {"workAddress"}))
     private List<WorkAddress> workAddresses;
 
-    @HBDynamicColumn(family = "address",
-            alias = "homeAddress",
-            qualifier = @DynamicQualifier(parts = {"homeAddress"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+    @HBDynamicColumn(family = "address", alias = "homeAddress", qualifier = @DynamicQualifier(parts = {"homeAddress"}))
     private List<HomeAddress> homeAddresses;
 
     @Override

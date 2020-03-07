@@ -38,12 +38,10 @@ public class RecipeCampaignActionRecord implements HBRecord<String> {
     @HBColumn(family = OPTIONAL_FAMILY, column = "customerPid")
     private String customerPid;
 
-    @HBDynamicColumn(family = CAMPAIGNS_FAMILY, alias = CAMPAIGN_PREFIX,
-            qualifier = @DynamicQualifier(parts = {"campaignPosition"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+    @HBDynamicColumn(family = CAMPAIGNS_FAMILY, alias = CAMPAIGN_PREFIX, qualifier = @DynamicQualifier(parts = {"campaignId", "position"}))
     private List<RecipeTile> recipeTiles;
 
-    @HBDynamicColumn(family = DAYS_FAMILY, alias = DAY_PREFIX,
-            qualifier = @DynamicQualifier(parts = {"dayId"}, composer = "composeDaysQualifier", parser = "parseDaysQualifier"))
+    @HBDynamicColumn(family = DAYS_FAMILY, alias = DAY_PREFIX, qualifier = @DynamicQualifier(parts = {"dayId"}))
     private List<ContentRecipeJsonDto> jsonRecipes;
 
     @Override

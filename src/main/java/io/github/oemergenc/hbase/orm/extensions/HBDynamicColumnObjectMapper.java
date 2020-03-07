@@ -93,7 +93,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         return t;
     }
 
-    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> void convertMapToRecord(NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> map, Class<T> clazz, T record) {
+    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>> void convertMapToRecord(NavigableMap<byte[], NavigableMap<byte[], NavigableMap<Long, byte[]>>> map,
+                                                                                                    Class<T> clazz,
+                                                                                                    T record) {
         Collection<Field> fields = getHBDynamicColumnFields0(clazz).values();
         for (Field dynamicField : fields) {
             val genericTypeOfList = (ParameterizedType) dynamicField.getGenericType();
@@ -121,6 +123,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                     val columnVersionsMap = familyMap.get(dynamicColumnBytes);
                     val lastEntry = columnVersionsMap.lastEntry();
                     try {
+                        val test = codec.deserialize(lastEntry.getValue(), String.class, EMPTY_MAP);
                         val deserialize = codec.deserialize(lastEntry.getValue(), genericObjectType, EMPTY_MAP);
                         dynamicListMembers.add(deserialize);
                     } catch (DeserializationException e) {
@@ -152,7 +155,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         return mappings;
     }
 
-    List<String> getHBDynamicColumnNames(Field field, String columnQualifierField, HBRecord record) {
+    List<String> getHBDynamicColumnNames(Field field, String columnQualifierField, String partsSeperator, HBRecord record) {
         try {
             val declaredField = record.getClass().getDeclaredField(field.getName());
             declaredField.setAccessible(true);
@@ -164,8 +167,15 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 val listOfPojos = (List<?>) qualifierObject;
                 val listOfPojosType = (ParameterizedType) declaredField.getGenericType();
                 val pojoClazz = (Class<?>) listOfPojosType.getActualTypeArguments()[0];
-                val qualifierField = pojoClazz.getDeclaredField(columnQualifierField);
-                return getValidDynamicColumnValues(listOfPojos, qualifierField);
+                String[] split = columnQualifierField.split(partsSeperator);
+                List<String> validateHBDynamicColumnsValuesList = new ArrayList<>();
+                for (String theSplit : split) {
+                    val qualifierField = pojoClazz.getDeclaredField(theSplit);
+                    List<String> validDynamicColumnValues = getValidDynamicColumnValues(listOfPojos, qualifierField);
+                    validateHBDynamicColumnsValuesList.addAll(validDynamicColumnValues);
+                }
+                String join = String.join("#", validateHBDynamicColumnsValuesList);
+                return List.of(join);
             }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
@@ -232,7 +242,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         for (Field dynamicField : dynamicfields) {
             val hbColumn = new WrappedHBDynamicColumn(dynamicField);
             if (hbColumn.isPresent()) {
-                val hbDynamicColumnNames = getHBDynamicColumnNames(dynamicField, hbColumn.family(), record);
+                val hbDynamicColumnNames = getHBDynamicColumnNames(dynamicField, hbColumn.columnQualifierField(), hbColumn.getPartsSeperator(), record);
                 for (val columnName : hbDynamicColumnNames) {
                     val familyName = hbColumn.familyBytes();
                     val columnNameBytes = hbColumn.columnBytes(columnName);
@@ -240,7 +250,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                         map.put(familyName, new TreeMap<>(Bytes.BYTES_COMPARATOR));
                     }
                     val columns = map.get(familyName);
-                    final byte[] fieldValueBytes = getListFieldValueAsBytes(record, dynamicField, hbColumn.family(), columnName, Collections.emptyMap());
+                    final byte[] fieldValueBytes = getListFieldValueAsBytes(record, dynamicField, hbColumn.columnQualifierField(), hbColumn.getPartsSeperator(), columnName, Collections.emptyMap());
                     if (fieldValueBytes == null || fieldValueBytes.length == 0) {
                         continue;
                     }
@@ -317,7 +327,12 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         }
     }
 
-    private <R extends Serializable & Comparable<R>> byte[] getListFieldValueAsBytes(HBRecord<R> record, Field field, String fieldSelector, String elementSelector, Map<String, String> codecFlags) {
+    private <R extends Serializable & Comparable<R>> byte[] getListFieldValueAsBytes(HBRecord<R> record,
+                                                                                     Field field,
+                                                                                     String fieldSelector,
+                                                                                     String partsSeperator,
+                                                                                     String elementSelector,
+                                                                                     Map<String, String> codecFlags) {
         Serializable fieldValue;
         try {
             field.setAccessible(true);
@@ -326,11 +341,17 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             Serializable collect = (Serializable) col.stream()
                     .filter(o -> {
                         try {
-                            Field declaredField = o.getClass().getDeclaredField(fieldSelector);
-                            declaredField.setAccessible(true);
-                            String o1 = (String) declaredField.get(o);
-                            if (o1 != null)
-                                return o1.equals(elementSelector);
+                            String[] split = fieldSelector.split(partsSeperator);
+                            List<String> validateHBDynamicColumnsValuesList = new ArrayList<>();
+                            for (String theSplit : split) {
+                                Field declaredField = o.getClass().getDeclaredField(theSplit);
+                                declaredField.setAccessible(true);
+                                String o1 = (String) declaredField.get(o);
+                                validateHBDynamicColumnsValuesList.add(o1);
+                            }
+                            String join = String.join("#", validateHBDynamicColumnsValuesList);
+                            if (join != null)
+                                return join.equals(elementSelector);
                             return false;
                         } catch (NoSuchFieldException | IllegalAccessException e) {
                             e.printStackTrace();

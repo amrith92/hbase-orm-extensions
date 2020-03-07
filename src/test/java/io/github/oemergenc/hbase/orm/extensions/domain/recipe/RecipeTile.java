@@ -12,12 +12,11 @@ public class RecipeTile implements Serializable {
 
     private final String customerId;
     private final String campaignId;
-    private final Integer position;
+    private final String position;
     private final String recipeId;
     private final String html;
     @With
     private final String detailUrl;
     @With
     private final String recoType;
-    private final String campaignPosition;
 }

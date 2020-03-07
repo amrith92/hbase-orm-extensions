@@ -16,11 +16,13 @@ import java.util.Collection;
  */
 class WrappedHBDynamicColumn {
     private final String family;
-    private final DynamicQualifier columnQualifierField;
+    private final String columnQualifierField;
     private final Class<? extends Annotation> annotationClass;
     private final Field field;
     private final String alias;
     private final String seperator;
+    private final String[] parts;
+    private final String partsSeperator;
     private final boolean isPresent;
 
     WrappedHBDynamicColumn(Field field) {
@@ -35,10 +37,14 @@ class WrappedHBDynamicColumn {
             if (!Collection.class.isAssignableFrom(field.getType())) {
                 throw new IllegalArgumentException("HBDynamicColumn field must be a collection, but was " + field.getType());
             }
-            columnQualifierField = hbColumn.qualifier();
-            validateQualifierParts(columnQualifierField);
-            validateQualifierField(field);
+            validateQualifierParts(hbColumn.qualifier());
+            validateQualifierField(field, hbColumn.qualifier());
             validateAlias(hbColumn.alias());
+            validateSeparator(hbColumn.qualifier().separator());
+            String[] parts = hbColumn.qualifier().parts();
+            partsSeperator = hbColumn.qualifier().separator();
+            this.parts = parts;
+            columnQualifierField = composeQualifierField(parts, partsSeperator);
             isPresent = true;
             family = hbColumn.family();
             alias = hbColumn.alias();
@@ -52,15 +58,24 @@ class WrappedHBDynamicColumn {
             family = null;
             columnQualifierField = null;
             annotationClass = null;
+            parts = null;
+            partsSeperator = null;
             alias = null;
             seperator = null;
         }
     }
 
+    private String composeQualifierField(String[] parts, String separator) {
+        return String.join(separator, parts);
+    }
+
     private void validateQualifierParts(DynamicQualifier columnQualifierField) {
+        if (columnQualifierField.parts() == null || columnQualifierField.parts().length == 0) {
+            throw new IllegalArgumentException("parts array of DynamicQualifier cannot be empty or null");
+        }
         for (String part : columnQualifierField.parts()) {
             if (StringUtil.isNullOrEmpty(part)) {
-                throw new IllegalArgumentException("parts of DynamicQualifier cannot be empty or null");
+                throw new IllegalArgumentException("a part of DynamicQualifier cannot be empty or null");
             }
         }
     }
@@ -71,22 +86,28 @@ class WrappedHBDynamicColumn {
         }
     }
 
-    private void validateQualifierField(Field field) {
+    private void validateSeparator(String sep) {
+        if (StringUtil.isNullOrEmpty(sep)) {
+            throw new IllegalArgumentException("sep of DynamicQualifier cannot be empty or null");
+        }
+    }
+
+    private void validateQualifierField(Field field, DynamicQualifier qualifier) {
 
         ParameterizedType listType = (ParameterizedType) field.getGenericType();
         Type actualTypeArgument = listType.getActualTypeArguments()[0];
         if (actualTypeArgument instanceof Class) {
             Class<?> qualifierObjectClassType = (Class<?>) actualTypeArgument;
-            try {
-                String[] parts = columnQualifierField.parts();
-                for (String part : parts) {
+            String[] parts = qualifier.parts();
+            for (String part : parts) {
+                try {
                     Field declaredField = qualifierObjectClassType.getDeclaredField(part);
                     if (!declaredField.getType().equals(String.class)) {
                         throw new IllegalArgumentException("The generic Type of HBDynamicColumn must have a field with name " + part + " of type string, but was " + declaredField.getType());
                     }
+                } catch (NoSuchFieldException e) {
+                    throw new IllegalArgumentException("Generic Type of HBDynamicColumn must have a field with name " + part + " but was not found");
                 }
-            } catch (NoSuchFieldException e) {
-                throw new IllegalArgumentException("Generic Type of HBDynamicColumn must have a field with name " + columnQualifierField + " but was not found");
             }
         } else {
             throw new IllegalArgumentException("Generic Type of HBDynamicColumn must be a ParameterizedType");
@@ -101,8 +122,8 @@ class WrappedHBDynamicColumn {
         return Bytes.toBytes(family);
     }
 
-    public String[] columnQualifierParts() {
-        return columnQualifierField.parts();
+    public String columnQualifierField() {
+        return columnQualifierField;
     }
 
     public byte[] columnBytes(String columName) {
@@ -111,6 +132,14 @@ class WrappedHBDynamicColumn {
 
     public String getPrefix() {
         return alias + seperator;
+    }
+
+    public String[] getParts() {
+        return parts;
+    }
+
+    public String getPartsSeperator() {
+        return partsSeperator;
     }
 
     public String getName() {

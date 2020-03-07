@@ -28,9 +28,7 @@ public class RecipeRecord implements HBRecord<String> {
     @HBColumn(family = "campaign", column = "customerId")
     private String customerId;
 
-    @HBDynamicColumn(family = "campaign",
-            alias = "id",
-            qualifier = @DynamicQualifier(parts = {"campaignId"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+    @HBDynamicColumn(family = "campaign", alias = "id", qualifier = @DynamicQualifier(parts = {"campaignId"}))
     private List<Campaign> campaigns;
 
     @Override

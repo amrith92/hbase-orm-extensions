@@ -16,8 +16,4 @@ public @interface DynamicQualifier {
     String[] parts();
 
     String separator() default "#";
-
-    String composer();
-
-    String parser();
 }

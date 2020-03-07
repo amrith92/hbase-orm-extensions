@@ -43,6 +43,11 @@ abstract class AbstractComponentSpec extends Specification {
         tableDescriptor2.addFamily(new HColumnDescriptor("address"))
         tableDescriptor2.addFamily(new HColumnDescriptor("optional"))
         connection.admin.createTable(tableDescriptor2)
+
+        def tableDescriptor3 = new HTableDescriptor(TableName.valueOf('bd_omm_prp_campaigns'))
+        tableDescriptor3.addFamily(new HColumnDescriptor("campaigns"))
+        tableDescriptor3.addFamily(new HColumnDescriptor("optional"))
+        connection.admin.createTable(tableDescriptor3)
     }
 
     def setupSpec() {

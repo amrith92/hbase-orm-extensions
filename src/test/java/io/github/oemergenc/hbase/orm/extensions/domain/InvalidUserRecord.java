@@ -23,14 +23,10 @@ public class InvalidUserRecord implements HBRecord<String> {
     @HBColumn(family = "optional", column = "userId")
     private String userId;
 
-    @HBDynamicColumn(family = "addresses",
-            alias = "address",
-            qualifier = @DynamicQualifier(parts = {"address"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+    @HBDynamicColumn(family = "addresses", alias = "address", qualifier = @DynamicQualifier(parts = {"address"}))
     private List<Address> workAddresses;
 
-    @HBDynamicColumn(family = "addresses",
-            alias = "address",
-            qualifier = @DynamicQualifier(parts = {"address"}, composer = "composeCampaignQualifier", parser = "parseCampaignQualifier"))
+    @HBDynamicColumn(family = "addresses", alias = "address", qualifier = @DynamicQualifier(parts = {"address"}))
     private List<Address> homeAddresses;
 
     @Override
