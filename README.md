@@ -19,7 +19,6 @@ Maven:
 <dependency>
   <groupId>io.github.oemergenc</groupId>
   <artifactId>hbase-orm-extensions</artifactId>
-  <version>0.0.7</version>
 </dependency>
 ```
 
