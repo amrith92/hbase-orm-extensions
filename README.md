@@ -26,7 +26,8 @@ Maven:
 Annotate your class according to the following example:
 ```
 public class Dependents implements Serializable {
-    private Integer dependId;
+    private String dependId;
+    private String anotherId;
 }
 
 @HBTable(name = "citizens", families = {@Family(name = "dependents"), @Family(name = "optional", versions = 10)})
@@ -34,17 +35,16 @@ public class Citizen implements HBRecord<String> {
     private static final String ROWKEY_DELIMITER = "#";
     @HBRowKey
     private String citizenId;
-    @HBDynamicColumn(family = "dependents", qualifierField = "dependId")
+    @HBDynamicColumn(family = "dependents", qualifier = @DynamicQualifier(parts = {"dependId", "anotherId"}))
     private List<Dependents> dependents; 
 ...
 }
 ```
 
-This will automatically store all `Dependents` in the list member variable `dependents` in the hbase table `citizens` using the following column qualifiers: 
+This will automatically store all `Dependents` in the list member variable `dependents` in the hbase table `citizens` using the following column qualifier scheme `dependents:dependId#dependId$anotherId`: 
 ```
-- dependents:dependId#1234
-- dependents:dependId#9876
-- dependents:dependId#952
+- dependents:dependId#9876$bcdhs123
+- dependents:dependId#9529$nkj9280
 ```
 
 ## License
