@@ -115,9 +115,9 @@ class DynamicMapperSpec extends Specification {
         def result = mapper.writeValueAsResult(campaignRecord)
 
         then:
-        def cells = result.getColumnCells("campaigns".bytes, 'cp#campaignId1234$1'.bytes)
+        def cells = result.getColumnCells("campaigns".bytes, 'cp#campaignId1234#1'.bytes)
         cells.size() == 1
-        def dayCells = result.getColumnCells("days".bytes, 'd#23-01-2019'.bytes)
+        def dayCells = result.getColumnCells("days".bytes, 'd$23-01-2019'.bytes)
         dayCells.size() == 1
 
         when:
