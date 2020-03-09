@@ -7,7 +7,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Represents a column family in HBase
+ * Represents a column qualifier in HBase
  */
 @Target(TYPE)
 @Retention(RUNTIME)
@@ -15,5 +15,5 @@ public @interface DynamicQualifier {
 
     String[] parts();
 
-    String separator() default "#";
+    String separator() default "$";
 }

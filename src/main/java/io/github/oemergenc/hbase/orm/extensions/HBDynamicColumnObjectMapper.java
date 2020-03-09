@@ -46,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -123,7 +124,6 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                     val columnVersionsMap = familyMap.get(dynamicColumnBytes);
                     val lastEntry = columnVersionsMap.lastEntry();
                     try {
-                        val test = codec.deserialize(lastEntry.getValue(), String.class, EMPTY_MAP);
                         val deserialize = codec.deserialize(lastEntry.getValue(), genericObjectType, EMPTY_MAP);
                         dynamicListMembers.add(deserialize);
                     } catch (DeserializationException e) {
@@ -167,15 +167,21 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 val listOfPojos = (List<?>) qualifierObject;
                 val listOfPojosType = (ParameterizedType) declaredField.getGenericType();
                 val pojoClazz = (Class<?>) listOfPojosType.getActualTypeArguments()[0];
-                String[] split = columnQualifierField.split(partsSeperator);
-                List<String> validateHBDynamicColumnsValuesList = new ArrayList<>();
-                for (String theSplit : split) {
-                    val qualifierField = pojoClazz.getDeclaredField(theSplit);
-                    List<String> validDynamicColumnValues = getValidDynamicColumnValues(listOfPojos, qualifierField);
-                    validateHBDynamicColumnsValuesList.addAll(validDynamicColumnValues);
+                String[] split = columnQualifierField.split(java.util.regex.Pattern.quote(partsSeperator));
+                List<String> names = new ArrayList<>();
+                for (Object pojo : listOfPojos) {
+                    List<String> validateHBDynamicColumnsValuesList = new ArrayList<>();
+                    for (String theSplit : split) {
+                        val qualifierField = pojoClazz.getDeclaredField(theSplit);
+                        List<String> validDynamicColumnValues = getValidDynamicColumnValues(List.of(pojo), qualifierField);
+                        validateHBDynamicColumnsValuesList.addAll(validDynamicColumnValues);
+                    }
+                    if (!validateHBDynamicColumnsValuesList.isEmpty()) {
+                        String dynamicColumNamePerPojo = String.join(partsSeperator, validateHBDynamicColumnsValuesList);
+                        names.add(dynamicColumNamePerPojo);
+                    }
                 }
-                String join = String.join("#", validateHBDynamicColumnsValuesList);
-                return List.of(join);
+                return names;
             }
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
@@ -199,9 +205,11 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 }
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 e.printStackTrace();
+                return new ArrayList<>();
             } catch (InvalidColumnQualifierFieldException ex) {
                 log.error("There was an invalid qualifier field value, which will be ignored", ex);
                 ex.printStackTrace();
+                return new ArrayList<>();
             }
         }
         return validQualifierValues;
@@ -338,10 +346,10 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             field.setAccessible(true);
             fieldValue = (Serializable) field.get(record);
             Collection col = (Collection) fieldValue;
-            Serializable collect = (Serializable) col.stream()
+            Optional first = col.stream()
                     .filter(o -> {
                         try {
-                            String[] split = fieldSelector.split(partsSeperator);
+                            String[] split = fieldSelector.split(java.util.regex.Pattern.quote(partsSeperator));
                             List<String> validateHBDynamicColumnsValuesList = new ArrayList<>();
                             for (String theSplit : split) {
                                 Field declaredField = o.getClass().getDeclaredField(theSplit);
@@ -349,7 +357,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                                 String o1 = (String) declaredField.get(o);
                                 validateHBDynamicColumnsValuesList.add(o1);
                             }
-                            String join = String.join("#", validateHBDynamicColumnsValuesList);
+                            String join = String.join(partsSeperator, validateHBDynamicColumnsValuesList);
                             if (join != null)
                                 return join.equals(elementSelector);
                             return false;
@@ -357,11 +365,15 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                             e.printStackTrace();
                         }
                         return false;
-                    }).findFirst().get();
-            return valueToByteArray(collect, codecFlags);
+                    }).findFirst();
+            if (first.isPresent()) {
+                Object collect = first.get();
+                return valueToByteArray((Serializable) collect, codecFlags);
+            }
         } catch (IllegalAccessException e) {
             throw new BadHBaseLibStateException(e);
         }
+        return null;
     }
 
     byte[] valueToByteArray(Serializable value, Map<String, String> codecFlags) {

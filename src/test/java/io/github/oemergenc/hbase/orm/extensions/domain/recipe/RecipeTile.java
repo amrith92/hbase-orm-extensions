@@ -1,22 +1,24 @@
 package io.github.oemergenc.hbase.orm.extensions.domain.recipe;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.With;
 
 import java.io.Serializable;
 
 @Data
-@RequiredArgsConstructor
+@AllArgsConstructor
+@NoArgsConstructor
 public class RecipeTile implements Serializable {
 
-    private final String customerId;
-    private final String campaignId;
-    private final String position;
-    private final String recipeId;
-    private final String html;
+    private String customerId;
+    private String campaignId;
+    private String position;
+    private String recipeId;
+    private String html;
     @With
-    private final String detailUrl;
+    private String detailUrl;
     @With
-    private final String recoType;
+    private String recoType;
 }

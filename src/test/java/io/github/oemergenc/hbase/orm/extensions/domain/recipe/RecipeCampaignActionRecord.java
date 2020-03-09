@@ -30,18 +30,21 @@ public class RecipeCampaignActionRecord implements HBRecord<String> {
     public static final String DAYS_FAMILY = "days";
     public static final String OPTIONAL_FAMILY = "optional";
     public static final String CAMPAIGN_PREFIX = "cp";
-    public static final String DAY_PREFIX = "d";
     public static final String CAMPAIGN_SEPARATOR = "#";
+    public static final String DAY_PREFIX = "d";
+    public static final String DAY_SEPARATOR = "$";
     public static final Set<String> EXPECTED_COLUMN_FAMILIES = Set.of(CAMPAIGNS_FAMILY, OPTIONAL_FAMILY, DAYS_FAMILY);
 
     @HBRowKey
     @HBColumn(family = OPTIONAL_FAMILY, column = "customerPid")
     private String customerPid;
 
-    @HBDynamicColumn(family = CAMPAIGNS_FAMILY, alias = CAMPAIGN_PREFIX, qualifier = @DynamicQualifier(parts = {"campaignId", "position"}))
+    @HBDynamicColumn(family = CAMPAIGNS_FAMILY, alias = CAMPAIGN_PREFIX,
+            qualifier = @DynamicQualifier(parts = {"campaignId", "position"}, separator = CAMPAIGN_SEPARATOR))
     private List<RecipeTile> recipeTiles;
 
-    @HBDynamicColumn(family = DAYS_FAMILY, alias = DAY_PREFIX, qualifier = @DynamicQualifier(parts = {"dayId"}))
+    @HBDynamicColumn(family = DAYS_FAMILY, alias = DAY_PREFIX,
+            qualifier = @DynamicQualifier(parts = {"dayId"}), separator = DAY_SEPARATOR)
     private List<ContentRecipeJsonDto> jsonRecipes;
 
     @Override
