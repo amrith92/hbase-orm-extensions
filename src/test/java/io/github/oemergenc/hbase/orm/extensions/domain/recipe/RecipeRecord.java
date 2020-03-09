@@ -1,4 +1,4 @@
-package io.github.oemergenc.hbase.orm.extensions.domain;
+package io.github.oemergenc.hbase.orm.extensions.domain.recipe;
 
 import com.flipkart.hbaseobjectmapper.DynamicQualifier;
 import com.flipkart.hbaseobjectmapper.Family;
@@ -7,6 +7,7 @@ import com.flipkart.hbaseobjectmapper.HBRecord;
 import com.flipkart.hbaseobjectmapper.HBRowKey;
 import com.flipkart.hbaseobjectmapper.HBTable;
 import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumn;
+import io.github.oemergenc.hbase.orm.extensions.domain.Campaign;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @HBTable(name = "campaigns", families = {@Family(name = "campaign")})
-public class CampaignRecord implements HBRecord<String> {
+public class RecipeRecord implements HBRecord<String> {
     public static final String ROW_KEY_DELIMITER = "#";
     public static final String ROW_PREFIX = "pfx";
     public static final String ROW_KEY_TEMPLATE = ROW_PREFIX + ROW_KEY_DELIMITER + "%s";
@@ -27,9 +28,7 @@ public class CampaignRecord implements HBRecord<String> {
     @HBColumn(family = "campaign", column = "customerId")
     private String customerId;
 
-    @HBDynamicColumn(family = "campaign",
-            alias = "id",
-            qualifier = @DynamicQualifier(parts = {"campaignId"}))
+    @HBDynamicColumn(family = "campaign", alias = "id", qualifier = @DynamicQualifier(parts = {"campaignId"}))
     private List<Campaign> campaigns;
 
     @Override

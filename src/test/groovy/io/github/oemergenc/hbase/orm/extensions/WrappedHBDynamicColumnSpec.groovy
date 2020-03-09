@@ -1,6 +1,6 @@
 package io.github.oemergenc.hbase.orm.extensions
 
-
+import com.flipkart.hbaseobjectmapper.DynamicQualifier
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -19,9 +19,27 @@ class WrappedHBDynamicColumnSpec extends Specification {
         column.isPresent == true
         column.family == "f"
         column.columnQualifierField == "q"
-        column.alias == "q"
+        column.alias == "a"
         column.seperator == "#"
-        column.prefix == "q#"
+        column.prefix == "a#"
+    }
+
+    @Unroll
+    def "Multiple parts qualifier works"() {
+        given:
+        def field = clazz.getClass().getDeclaredField("field")
+
+        when:
+        def column = new WrappedHBDynamicColumn(field)
+
+        then:
+        noExceptionThrown()
+        column.columnQualifierField == expectedQualifier
+
+        where:
+        clazz                                    | expectedQualifier
+        new MultiplePartsHBDynamicColumnClass()  | 'q$q1'
+        new MultiplePartsHBDynamicColumnClass2() | 'q2$q$q1'
     }
 
     def "no HBDynamicColumn annotation does not throw exception"() {
@@ -93,48 +111,141 @@ class WrappedHBDynamicColumnSpec extends Specification {
         new WrongListComplexTypeHBDynamicColumnClass() | _
     }
 
+    @Unroll
+    def "invalid multiple part columns throws exception"() {
+        given:
+        def field = clazz.getClass().getDeclaredField("field")
+
+        when:
+        new WrappedHBDynamicColumn(field)
+
+        then:
+        thrown(IllegalArgumentException)
+
+        where:
+        clazz                                           | _
+        new InvalidMultiplePartsHBDynamicColumnClass1() | _
+        new InvalidMultiplePartsHBDynamicColumnClass2() | _
+        new EmptyPartsHBDynamicColumnClass2()           | _
+    }
+
     class SimpleQualifierClass {
         String q;
     }
 
+    class TwoPartsQualifierClass {
+        String q;
+        String q1;
+    }
+
+    class ThreePartsQualifierClass {
+        String q;
+        String q1;
+        String q2;
+    }
+
     class ValidHBDynamicColumnClass {
-        @HBDynamicColumn(family = "f", qualifierField = "q")
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q"])
+        )
         List<SimpleQualifierClass> field;
     }
 
     class EmptyQualifierHBDynamicColumnClass {
-        @HBDynamicColumn(family = "f", qualifierField = " ")
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = [" "])
+        )
         List<SimpleQualifierClass> field;
     }
 
     class BlankQualifierHBDynamicColumnClass {
-        @HBDynamicColumn(family = "f", qualifierField = "")
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = [""])
+        )
         List<SimpleQualifierClass> field;
     }
 
     class ListHBDynamicColumnClass {
-        @HBDynamicColumn(family = "", qualifierField = "q")
+        @HBDynamicColumn(family = "",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q"])
+        )
         List<String> field;
     }
 
     class WrongPrimitiveHBDynamicColumnClass {
-        @HBDynamicColumn(family = "", qualifierField = "q")
+        @HBDynamicColumn(family = "",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q"])
+        )
         String field;
     }
 
     class WrongComplexHBDynamicColumnClass {
-        @HBDynamicColumn(family = "", qualifierField = "q")
+        @HBDynamicColumn(family = "",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q"])
+        )
         Map<String, String> field;
     }
 
     class WrongListPrimitiveHBDynamicColumnClass {
-        @HBDynamicColumn(family = "", qualifierField = "q")
+        @HBDynamicColumn(family = "",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q"])
+        )
         List<Integer> field;
     }
 
     class WrongListComplexTypeHBDynamicColumnClass {
-        @HBDynamicColumn(family = "", qualifierField = "q")
+        @HBDynamicColumn(family = "",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q"])
+        )
         List<Map<String, String>> field;
+    }
+
+    class MultiplePartsHBDynamicColumnClass {
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q", "q1"])
+        )
+        List<TwoPartsQualifierClass> field;
+    }
+
+    class MultiplePartsHBDynamicColumnClass2 {
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q2", "q", "q1"])
+        )
+        List<ThreePartsQualifierClass> field;
+    }
+
+    class InvalidMultiplePartsHBDynamicColumnClass1 {
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["q", "1"])
+        )
+        List<TwoPartsQualifierClass> field;
+    }
+
+    class InvalidMultiplePartsHBDynamicColumnClass2 {
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = ["", "q1"])
+        )
+        List<TwoPartsQualifierClass> field;
+    }
+
+    class EmptyPartsHBDynamicColumnClass2 {
+        @HBDynamicColumn(family = "f",
+                alias = "a",
+                qualifier = @DynamicQualifier(parts = [])
+        )
+        List<TwoPartsQualifierClass> field;
     }
 
     class NoHBDynamicColumnClass {

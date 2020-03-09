@@ -4,12 +4,17 @@ import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumnObjectMapper
 import io.github.oemergenc.hbase.orm.extensions.domain.Campaign
 import io.github.oemergenc.hbase.orm.extensions.domain.CampaignRecord
 import io.github.oemergenc.hbase.orm.extensions.domain.ValidUserRecord
+import io.github.oemergenc.hbase.orm.extensions.domain.recipe.ContentRecipeJsonDto
+import io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampaignActionRecord
+import io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeTile
 import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static io.github.oemergenc.hbase.orm.extensions.data.CampaignContent.campaign
 import static io.github.oemergenc.hbase.orm.extensions.data.CampaignContent.record
 import static io.github.oemergenc.hbase.orm.extensions.data.UserContent.*
+import static java.util.UUID.randomUUID
 
 class DynamicMapperSpec extends Specification {
     def mapper = new HBDynamicColumnObjectMapper()
@@ -95,5 +100,75 @@ class DynamicMapperSpec extends Specification {
 
         then:
         thrown(DuplicateColumnIdentifierException)
+    }
+
+    def "Converting multi model class works"() {
+        given:
+        def tile = new RecipeTile("customerId", "campaignId1234", "1", "recipeId", "<html/>", "www.detail.url", "trending")
+        def jsonDto = new ContentRecipeJsonDto("customerId", "23-01-2019", [], "trending")
+        def campaignRecord = new RecipeCampaignActionRecord()
+        campaignRecord.setCustomerPid("custId2")
+        campaignRecord.setRecipeTiles([tile])
+        campaignRecord.setJsonRecipes([jsonDto])
+
+        when:
+        def result = mapper.writeValueAsResult(campaignRecord)
+
+        then:
+        def cells = result.getColumnCells("campaigns".bytes, 'cp#campaignId1234#1'.bytes)
+        cells.size() == 1
+        def dayCells = result.getColumnCells("days".bytes, 'd$23-01-2019'.bytes)
+        dayCells.size() == 1
+
+        when:
+        def campaignRecordResult = mapper.readValue(result, RecipeCampaignActionRecord.class)
+
+        then:
+        campaignRecordResult.recipeTiles.size() == 1
+        campaignRecordResult.recipeTiles[0].customerId == 'customerId'
+        campaignRecordResult.recipeTiles[0].campaignId == 'campaignId1234'
+        campaignRecordResult.recipeTiles[0].position == '1'
+        campaignRecordResult.recipeTiles[0].recipeId == 'recipeId'
+        campaignRecordResult.recipeTiles[0].html == '<html/>'
+        campaignRecordResult.recipeTiles[0].recoType == 'trending'
+        campaignRecordResult.recipeTiles[0].detailUrl == 'www.detail.url'
+
+        and:
+        campaignRecordResult.jsonRecipes.size() == 1
+        campaignRecordResult.jsonRecipes[0].recoType == "trending"
+        campaignRecordResult.jsonRecipes[0].customerId == "customerId"
+        campaignRecordResult.jsonRecipes[0].dayId == "23-01-2019"
+        campaignRecordResult.jsonRecipes[0].recipes.isEmpty()
+    }
+
+    @Unroll
+    def "empty or null dynamic columns value do not break persistence"() {
+        given:
+        def userId = randomUUID() as String
+        def validUserRecord = validrecord(userId: userId,
+                workAddresses: workAdress,
+                homeAddresses: homeAdress,
+        )
+
+        when:
+        def result = mapper.writeValueAsResult(validUserRecord)
+
+        and:
+        def record = mapper.readValue(result, ValidUserRecord.class)
+
+        then:
+        noExceptionThrown()
+        record
+        record.workAddresses.collect { it.workAddress } == expectedWork
+        record.homeAddresses.collect { it.homeAddress } == expectedHome
+
+        where:
+        workAdress                            | homeAdress                                | expectedWork    | expectedHome
+        [workAddress(address: "workAddress")] | [homeAddress(address: "my-home-address")] | ["workAddress"] | ["my-home-address"]
+        [workAddress(address: "workAddress")] | []                                        | ["workAddress"] | []
+        []                                    | [homeAddress(address: "my-home-address")] | []              | ["my-home-address"]
+        null                                  | [homeAddress(address: "my-home-address")] | []              | ["my-home-address"]
+        [workAddress(address: "workAddress")] | null                                      | ["workAddress"] | []
+        [workAddress(address: "workAddress")] | []                                        | ["workAddress"] | []
     }
 }
