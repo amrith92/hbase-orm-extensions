@@ -7,7 +7,6 @@ import io.github.oemergenc.hbase.orm.extensions.domain.ValidUserRecord
 import io.github.oemergenc.hbase.orm.extensions.domain.recipe.ContentRecipeJsonDto
 import io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampaignActionRecord
 import io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeTile
-import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -85,22 +84,22 @@ class DynamicMapperSpec extends Specification {
         recordResult.homeAddresses.collect { it.homeAddress }.containsAll(["my-home-address"])
     }
 
-    def "Invalid record throws exception"() {
-        given:
-        def userId = "theExceptionUser"
-        def workAddress = address(address: "workAddress")
-        def homeAddress = address(address: "my-home-address")
-        def validUserRecord = invalidrecord(userId: userId,
-                workAddresses: [workAddress],
-                homeAddresses: [homeAddress],
-        )
-
-        when:
-        mapper.writeValueAsResult(validUserRecord)
-
-        then:
-        thrown(DuplicateColumnIdentifierException)
-    }
+//    def "Invalid record throws exception"() {
+//        given:
+//        def userId = "theExceptionUser"
+//        def workAddress = address(address: "workAddress")
+//        def homeAddress = address(address: "my-home-address")
+//        def validUserRecord = invalidrecord(userId: userId,
+//                workAddresses: [workAddress],
+//                homeAddresses: [homeAddress],
+//        )
+//
+//        when:
+//        mapper.writeValueAsResult(validUserRecord)
+//
+//        then:
+//        thrown(DuplicateColumnIdentifierException)
+//    }
 
     def "Converting multi model class works"() {
         given:

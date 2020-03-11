@@ -24,17 +24,26 @@ abstract class AbstractComponentSpec extends Specification {
     static CampaignActionsBigTableUtil campaignActionsBigTableUtil
 
     static {
+        bigTableContainer.start()
+
+        def bigTablePort = bigTableContainer.getMappedPort(8086)
+        def bigTableHost = bigTableContainer.containerIpAddress + ""
+
         def bigTableProjectId = 'irrelevant'
         def bigTableInstanceId = 'irrelevant'
 
-        if (System.getenv("BIGTABLE_EMULATOR_HOST") == null) {
-            bigTableHelper = onRunOnCiServer(bigTableProjectId, bigTableInstanceId)
-        } else {
-            bigTableHelper = onRunOnDev(bigTableProjectId, bigTableInstanceId)
-        }
+        System.setProperty('bigtable.port', bigTablePort as String)
+        System.setProperty('bigtable.host', bigTableHost)
+        System.setProperty('bigtable.projectId', bigTableProjectId)
+        System.setProperty('bigtable.instanceId', bigTableInstanceId)
 
+        bigTableHelper = new BigTableHelper(bigTablePort,
+                bigTableHost,
+                bigTableProjectId,
+                bigTableInstanceId)
         campaignActionsBigTableUtil = new CampaignActionsBigTableUtil(bigTableHelper)
         def connection = bigTableHelper.connect()
+
         def tableDescriptor = new HTableDescriptor(TableName.valueOf('campaigns'))
         tableDescriptor.addFamily(new HColumnDescriptor("campaign"))
         connection.admin.createTable(tableDescriptor)
@@ -86,6 +95,8 @@ abstract class AbstractComponentSpec extends Specification {
     }
 
     public static BigTableHelper onRunOnDev(String bigTableProjectId, String bigTableInstanceId) {
+        bigTableContainer.start()
+
         bigTableHelper = new BigTableHelper(bigTableProjectId, bigTableInstanceId)
         bigTableHelper
     }

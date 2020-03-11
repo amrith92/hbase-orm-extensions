@@ -10,6 +10,6 @@ public class BigTableContainer extends GenericContainer<BigTableContainer> {
         super("google/cloud-sdk:latest:latest");
         withExposedPorts(BIG_TABLE_PORT);
         withCommand("gcloud beta emulators bigtable start --host-port=0.0.0.0:" + BIG_TABLE_PORT);
-        withEnv("BIGTABLE_EMULATOR_HOST", "0.0.0.0:" + BIG_TABLE_PORT);
+//        withEnv("BIGTABLE_EMULATOR_HOST", "0.0.0.0:" + BIG_TABLE_PORT);
     }
 }
