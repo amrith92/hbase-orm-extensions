@@ -58,7 +58,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     }
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>>
-    Get getAsGets(Class<T> hbRecordClazz, byte[] rowKey, String family, List<String> qualifierParts) {
+    Get getAsGet(Class<T> hbRecordClazz, byte[] rowKey, String family, List<String> qualifierParts) {
         Get get = new Get(rowKey);
         List<HBDynamicColumn> hbDynamicColumnsForFamily = getHBDynamicColumnsForFamily(hbRecordClazz, family);
         for (val hbDynamicColumn : hbDynamicColumnsForFamily) {
