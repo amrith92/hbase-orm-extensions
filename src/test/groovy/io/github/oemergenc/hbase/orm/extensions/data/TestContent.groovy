@@ -3,6 +3,7 @@ package io.github.oemergenc.hbase.orm.extensions.data
 import io.github.oemergenc.hbase.orm.extensions.domain.dto.DependentWithListType
 import io.github.oemergenc.hbase.orm.extensions.domain.dto.DependentWithPrimitiveTypes
 import io.github.oemergenc.hbase.orm.extensions.domain.records.MultipleHBDynamicColumnsRecord
+import io.github.oemergenc.hbase.orm.extensions.domain.records.MultipleHBDynamicColumnsWithSameFamilyRecord
 
 class TestContent {
     static def getStubDependend() {
@@ -50,6 +51,19 @@ class TestContent {
         ]
 
         def record = new MultipleHBDynamicColumnsRecord(staticId, dynamicValues1, dynamicValues2, dynamicValues3, dynamicValues4)
+        record
+    }
+
+    static def getDefaultMultiHBDynamicColumWithSameFamilyRecord(String staticId) {
+        def dynamicValues1 = [
+                new DependentWithListType("dv1_dp1_1", "otherId_1", [], "aString_1"),
+                new DependentWithListType("dv1_dp1_2", "otherId_2", [], "aString_2"),
+        ]
+        def dynamicValues2 = [
+                new DependentWithListType("dv2_dp1_1", "otherId_1", [], "aString_1"),
+                new DependentWithListType("dv2_dp1_2", "otherId_2", [], "aString_2"),
+        ]
+        def record = new MultipleHBDynamicColumnsWithSameFamilyRecord(staticId, dynamicValues1, dynamicValues2)
         record
     }
 }
