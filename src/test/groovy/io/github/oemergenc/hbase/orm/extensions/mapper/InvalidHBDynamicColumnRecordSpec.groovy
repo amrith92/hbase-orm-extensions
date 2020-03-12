@@ -35,7 +35,7 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
     }
 
     @Unroll
-    def "duplicate hbdynamic columns in a class thorws exception"() {
+    def "duplicate hbdynamic columns in a class throws exception"() {
         when:
         mapper.validate(clazz)
 

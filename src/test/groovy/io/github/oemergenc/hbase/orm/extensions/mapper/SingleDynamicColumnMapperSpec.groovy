@@ -60,4 +60,26 @@ class SingleDynamicColumnMapperSpec extends Specification {
         recordResult.dynamicFamily.size() == 1
         recordResult.dynamicFamily.collect { it.dynamicId }.containsAll(["dynamicId1"])
     }
+
+    def "Converting to get for dynamic qualifiers works"() {
+        given:
+        def staticId = "staticId"
+        def dynamicFamilyList = [new DependentWithMap("dynamicId1", ["1": "bla", "12321": "qewwqe"])]
+        def record = new SingleHBDynamicColumnRecord(staticId, dynamicFamilyList)
+
+        when:
+        def result = mapper.writeValueAsResult(record)
+
+        then:
+        result
+        result.getFamilyMap("dynamicFamily".bytes)["id#dynamicId1".bytes]
+        result.getFamilyMap("staticFamily".bytes)['staticId'.bytes]
+
+        when:
+        def get = mapper.getAsGets(SingleHBDynamicColumnRecord.class, staticId.bytes, "dynamicFamily", ["dynamicId1"])
+
+        then:
+        get
+        get.numFamilies() == 1
+    }
 }

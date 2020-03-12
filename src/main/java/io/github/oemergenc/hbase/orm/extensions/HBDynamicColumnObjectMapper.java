@@ -20,6 +20,7 @@ import net.vidageek.mirror.list.dsl.MirrorList;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellBuilderFactory;
 import org.apache.hadoop.hbase.CellBuilderType;
+import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,33 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     public HBDynamicColumnObjectMapper() {
         this(CODEC);
+    }
+
+    public <R extends Serializable & Comparable<R>, T extends HBRecord<R>>
+    Get getAsGets(Class<T> hbRecordClazz, byte[] rowKey, String family, List<String> qualifierParts) {
+        Get get = new Get(rowKey);
+        List<HBDynamicColumn> hbDynamicColumnsForFamily = getHBDynamicColumnsForFamily(hbRecordClazz, family);
+        for (val hbDynamicColumn : hbDynamicColumnsForFamily) {
+            String columnToQualifierSeparator = hbDynamicColumn.separator();
+            String qualifierPartsSeparator = hbDynamicColumn.qualifier().separator();
+            String alias = hbDynamicColumn.alias();
+            String dynamicColumnPrefix = alias.concat(columnToQualifierSeparator);
+            String qualifierValue = String.join(qualifierPartsSeparator, qualifierParts);
+            String familyColumnQualifier = dynamicColumnPrefix.concat(qualifierValue);
+            get.addColumn(family.getBytes(), familyColumnQualifier.getBytes());
+        }
+        return get;
+    }
+
+    private <R extends Serializable & Comparable<R>, T extends HBRecord<R>>
+    List<HBDynamicColumn> getHBDynamicColumnsForFamily(Class<T> hbRecordClazz, String family) {
+        val hbDynamicColumnFields = MIRROR.on(hbRecordClazz).reflectAll().fields()
+                .matching(element -> element.getAnnotation(HBDynamicColumn.class) != null)
+                .mappingTo(element -> element.getAnnotation(HBDynamicColumn.class));
+        return hbDynamicColumnFields
+                .stream()
+                .filter(hbDynamicColumn -> hbDynamicColumn.family().equals(family))
+                .collect(Collectors.toList());
     }
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>>

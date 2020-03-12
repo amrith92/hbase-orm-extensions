@@ -132,4 +132,48 @@ class MultipleDynamicColumnsDaoComponentTest extends AbstractComponentSpec {
         [getStubDependend(dynamicPart1: ""), getStubDependend()]  | [getStubDependend()]
         [getStubDependend(dynamicPart1: " "), getStubDependend()] | [getStubDependend()]
     }
+
+    def "Querying for a specific dynamic qualifier works"() {
+        given:
+        def expectedRowKey = "theRowKey"
+        def dynamicValues1 = [
+                new DependentWithPrimitiveTypes("dv1_dp1_1", "dv1_dp2_1", "dv1_position_1", "dv1_recipeId_1", "<html>dv1_html_1</html>"),
+                new DependentWithPrimitiveTypes("dv1_dp1_2", "dv1_dp2_2", "dv1_position_2", "dv1_recipeId_2", "<html>dv1_html_2</html>")
+        ]
+        def dynamicValues2 = [
+                new DependentWithListType("dv2_dp1_1", "otherId_1", [], "aString_1"),
+                new DependentWithListType("dv2_dp1_2", "otherId_2", [], "aString_2"),
+        ]
+        def dynamicValues3 = [
+                new DependentWithPrimitiveTypes("dv3_dp1_1", "dv3_dp2_1", "dv3_position_1", "dv3_recipeId_1", "<html>dv3_html_1</html>"),
+                new DependentWithPrimitiveTypes("dv3_dp1_2", "dv3_dp2_2", "dv3_position_2", "dv3_recipeId_2", "<html>dv3_html_2</html>")
+        ]
+        def dynamicValues4 = [
+                new DependentWithPrimitiveTypes("dv4_dp1_1", "dv4_dp2_1", "dv4_position_1", "dv4_recipeId_1", "<html>dv4_html_1</html>"),
+                new DependentWithPrimitiveTypes("dv4_dp1_2", "dv4_dp2_2", "dv4_position_2", "dv4_recipeId_2", "<html>dv4_html_2</html>")
+        ]
+
+        def record = new MultipleHBDynamicColumnsRecord(expectedRowKey, dynamicValues1, dynamicValues2, dynamicValues3, dynamicValues4)
+
+        when:
+        def rowKey = dao.persist(record)
+
+        then:
+        rowKey == expectedRowKey
+
+        when:
+        def recordResult = dao.getDynamicCell(rowKey, "dynamicFamily1", ["dv1_dp1_1", "dv1_dp2_1"])
+
+        then:
+        recordResult
+        recordResult.staticId == rowKey
+
+        and:
+        recordResult.dynamicValues1.size() == 1
+        recordResult.dynamicValues1.collect { it.dynamicPart1 }.containsAll(["dv1_dp1_1"])
+        recordResult.dynamicValues1.collect { it.dynamicPart2 }.containsAll(["dv1_dp2_1"])
+        recordResult.dynamicValues1.collect { it.position }.containsAll(["dv1_position_1"])
+        recordResult.dynamicValues1.collect { it.recipeId }.containsAll(["dv1_recipeId_1"])
+        recordResult.dynamicValues1.collect { it.html }.containsAll(["<html>dv1_html_1</html>"])
+    }
 }
