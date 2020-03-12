@@ -22,6 +22,16 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
     protected AbstractHBDynamicDAO(Connection connection) {
         super(connection);
         hbDynamicColumnObjectMapper = new HBDynamicColumnObjectMapper(new BestSuitCodec());
+        hbDynamicColumnObjectMapper.validate(hbRecordClass);
+    }
+
+    public T getDynamicCell(R rowKey, String family, String cellIdentifier) throws IOException {
+        return getDynamicCell(rowKey, family, List.of(cellIdentifier));
+    }
+
+    public T getDynamicCell(R rowKey, String family, List<String> qualifierParts) throws IOException {
+        Get get = hbDynamicColumnObjectMapper.getAsGet(hbRecordClass, toBytes(rowKey), family, qualifierParts);
+        return getOnGet(get);
     }
 
     public T get(R rowKey) throws IOException {

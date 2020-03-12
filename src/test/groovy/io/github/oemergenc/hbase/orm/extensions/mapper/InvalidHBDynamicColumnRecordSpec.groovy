@@ -1,132 +1,93 @@
-package io.github.oemergenc.hbase.orm.extensions
+package io.github.oemergenc.hbase.orm.extensions.mapper
 
 import com.flipkart.hbaseobjectmapper.DynamicQualifier
+import com.flipkart.hbaseobjectmapper.HBRecord
+import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumn
+import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumnObjectMapper
+import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException
 import spock.lang.Specification
 import spock.lang.Unroll
 
-class WrappedHBDynamicColumnSpec extends Specification {
+class InvalidHBDynamicColumnRecordSpec extends Specification {
+    def mapper = new HBDynamicColumnObjectMapper()
 
     def "Valid family and qualifier works"() {
-        given:
-        def clazz = new ValidHBDynamicColumnClass()
-        def field = clazz.getClass().getDeclaredField("field")
-
         when:
-        def column = new WrappedHBDynamicColumn(field)
+        mapper.validate(ValidHBDynamicColumnClass.class)
 
         then:
         noExceptionThrown()
-        column.isPresent == true
-        column.family == "f"
-        column.columnQualifierField == "q"
-        column.alias == "a"
-        column.seperator == "#"
-        column.prefix == "a#"
-    }
-
-    @Unroll
-    def "Multiple parts qualifier works"() {
-        given:
-        def field = clazz.getClass().getDeclaredField("field")
-
-        when:
-        def column = new WrappedHBDynamicColumn(field)
-
-        then:
-        noExceptionThrown()
-        column.columnQualifierField == expectedQualifier
-
-        where:
-        clazz                                    | expectedQualifier
-        new MultiplePartsHBDynamicColumnClass()  | 'q:q1'
-        new MultiplePartsHBDynamicColumnClass2() | 'q2:q:q1'
-    }
-
-    def "no HBDynamicColumn annotation does not throw exception"() {
-        given:
-        def clazz = new NoHBDynamicColumnClass()
-        def field = clazz.getClass().getDeclaredField("field")
-
-        when:
-        def column = new WrappedHBDynamicColumn(field)
-
-        then:
-        noExceptionThrown()
-        column.isPresent == false
-        column.family == null
-        column.columnQualifierField == null
-        column.alias == null
-        column.seperator == null
     }
 
     @Unroll
     def "wrong field type throws exception"() {
-        given:
-        def field = clazz.getClass().getDeclaredField("field")
-
         when:
-        new WrappedHBDynamicColumn(field)
+        mapper.validate(clazz)
 
         then:
         thrown(IllegalArgumentException)
 
         where:
         clazz                                          | _
-        new WrongPrimitiveHBDynamicColumnClass()       | _
-        new WrongComplexHBDynamicColumnClass()         | _
-        new WrongListComplexTypeHBDynamicColumnClass() | _
+        WrongPrimitiveHBDynamicColumnClass.class       | _
+        WrongComplexHBDynamicColumnClass.class         | _
+        WrongListComplexTypeHBDynamicColumnClass.class | _
+    }
+
+    @Unroll
+    def "duplicate hbdynamic columns in a class throws exception"() {
+        when:
+        mapper.validate(clazz)
+
+        then:
+        thrown(DuplicateColumnIdentifierException)
+
+        where:
+        clazz                               | _
+        DuplicateHBDynamicColumnClass.class | _
     }
 
     @Unroll
     def "invalid qualifier field throws exception"() {
-        given:
-        def field = clazz.getClass().getDeclaredField("field")
-
         when:
-        new WrappedHBDynamicColumn(field)
+        mapper.validate(clazz)
 
         then:
         thrown(IllegalArgumentException)
 
         where:
         clazz                                    | _
-        new EmptyQualifierHBDynamicColumnClass() | _
-        new BlankQualifierHBDynamicColumnClass() | _
+        EmptyQualifierHBDynamicColumnClass.class | _
+        BlankQualifierHBDynamicColumnClass.class | _
     }
 
     @Unroll
     def "wrong list field type throws exception"() {
-        given:
-        def field = clazz.getClass().getDeclaredField("field")
-
         when:
-        new WrappedHBDynamicColumn(field)
+        mapper.validate(clazz)
 
         then:
         thrown(IllegalArgumentException)
 
         where:
         clazz                                          | _
-        new WrongListPrimitiveHBDynamicColumnClass()   | _
-        new WrongListComplexTypeHBDynamicColumnClass() | _
+        WrongListPrimitiveHBDynamicColumnClass.class   | _
+        WrongListComplexTypeHBDynamicColumnClass.class | _
     }
 
     @Unroll
     def "invalid multiple part columns throws exception"() {
-        given:
-        def field = clazz.getClass().getDeclaredField("field")
-
         when:
-        new WrappedHBDynamicColumn(field)
+        mapper.validate(clazz)
 
         then:
         thrown(IllegalArgumentException)
 
         where:
         clazz                                           | _
-        new InvalidMultiplePartsHBDynamicColumnClass1() | _
-        new InvalidMultiplePartsHBDynamicColumnClass2() | _
-        new EmptyPartsHBDynamicColumnClass2()           | _
+        InvalidMultiplePartsHBDynamicColumnClass1.class | _
+        InvalidMultiplePartsHBDynamicColumnClass2.class | _
+        EmptyPartsHBDynamicColumnClass2.class           | _
     }
 
     class SimpleQualifierClass {
@@ -144,7 +105,21 @@ class WrappedHBDynamicColumnSpec extends Specification {
         String q2;
     }
 
-    class ValidHBDynamicColumnClass {
+    class HBRecordTestBase implements HBRecord<String> {
+        def static ID = "theId"
+
+        @Override
+        String composeRowKey() {
+            return ID
+        }
+
+        @Override
+        void parseRowKey(String rowKey) {
+
+        }
+    }
+
+    class ValidHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
@@ -152,7 +127,14 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<SimpleQualifierClass> field;
     }
 
-    class EmptyQualifierHBDynamicColumnClass {
+    class DuplicateHBDynamicColumnClass extends HBRecordTestBase {
+        @HBDynamicColumn(family = "f", alias = "a", qualifier = @DynamicQualifier(parts = ["q"]))
+        List<SimpleQualifierClass> field;
+        @HBDynamicColumn(family = "f", alias = "a", qualifier = @DynamicQualifier(parts = ["q"]))
+        List<SimpleQualifierClass> field2;
+    }
+
+    class EmptyQualifierHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = [" "])
@@ -160,7 +142,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<SimpleQualifierClass> field;
     }
 
-    class BlankQualifierHBDynamicColumnClass {
+    class BlankQualifierHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = [""])
@@ -168,7 +150,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<SimpleQualifierClass> field;
     }
 
-    class ListHBDynamicColumnClass {
+    class ListHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
@@ -176,7 +158,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<String> field;
     }
 
-    class WrongPrimitiveHBDynamicColumnClass {
+    class WrongPrimitiveHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
@@ -184,7 +166,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         String field;
     }
 
-    class WrongComplexHBDynamicColumnClass {
+    class WrongComplexHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
@@ -192,7 +174,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         Map<String, String> field;
     }
 
-    class WrongListPrimitiveHBDynamicColumnClass {
+    class WrongListPrimitiveHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
@@ -200,7 +182,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<Integer> field;
     }
 
-    class WrongListComplexTypeHBDynamicColumnClass {
+    class WrongListComplexTypeHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
@@ -208,7 +190,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<Map<String, String>> field;
     }
 
-    class MultiplePartsHBDynamicColumnClass {
+    class MultiplePartsHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q", "q1"])
@@ -216,7 +198,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<TwoPartsQualifierClass> field;
     }
 
-    class MultiplePartsHBDynamicColumnClass2 {
+    class MultiplePartsHBDynamicColumnClass2 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q2", "q", "q1"])
@@ -224,7 +206,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<ThreePartsQualifierClass> field;
     }
 
-    class InvalidMultiplePartsHBDynamicColumnClass1 {
+    class InvalidMultiplePartsHBDynamicColumnClass1 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q", "1"])
@@ -232,7 +214,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<TwoPartsQualifierClass> field;
     }
 
-    class InvalidMultiplePartsHBDynamicColumnClass2 {
+    class InvalidMultiplePartsHBDynamicColumnClass2 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["", "q1"])
@@ -240,7 +222,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<TwoPartsQualifierClass> field;
     }
 
-    class EmptyPartsHBDynamicColumnClass2 {
+    class EmptyPartsHBDynamicColumnClass2 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = [])
@@ -248,7 +230,7 @@ class WrappedHBDynamicColumnSpec extends Specification {
         List<TwoPartsQualifierClass> field;
     }
 
-    class NoHBDynamicColumnClass {
+    class NoHBDynamicColumnClass extends HBRecordTestBase {
         def field;
     }
 }

@@ -4,7 +4,9 @@ import com.google.cloud.bigtable.hbase.BigtableConfiguration
 import com.google.cloud.bigtable.hbase.BigtableOptionsFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder
 import org.apache.hadoop.hbase.client.Connection
+import org.apache.hadoop.hbase.client.TableDescriptorBuilder
 
 class BigTableHelper {
     final int bigTablePort
@@ -50,5 +52,13 @@ class BigTableHelper {
 
     def getTable(def tableName) {
         this.connection.getTable(TableName.valueOf(tableName))
+    }
+
+    def createTable(String name, List familyNames) {
+        def families = familyNames.collect { ColumnFamilyDescriptorBuilder.of(it as String) }
+        def tableDescriptor = TableDescriptorBuilder.newBuilder(TableName.valueOf(name))
+                .setColumnFamilies(families)
+                .build()
+        connection.admin.createTable(tableDescriptor)
     }
 }
