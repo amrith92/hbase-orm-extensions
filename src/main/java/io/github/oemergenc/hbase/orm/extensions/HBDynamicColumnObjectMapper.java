@@ -20,6 +20,7 @@ import org.apache.hadoop.hbase.CellBuilderFactory;
 import org.apache.hadoop.hbase.CellBuilderType;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -130,7 +131,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 val family = columnFamilyToQualifierEntry.getKey();
                 for (val e : columnFamilyToQualifierEntry.getValue().entrySet()) {
                     val columnQualifier = e.getKey();
-                    Object columnValue = e.getValue();
+                    val columnValue = e.getValue();
                     Optional.ofNullable(safeCast(columnValue, Serializable.class))
                             .ifPresent(serializableColumnValue -> {
                                         val cellBuilder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
@@ -209,7 +210,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         List<Object> columnQualifierPartList = new ArrayList<>();
         for (String part : parts) {
             Object columnQualifierPart = MIRROR.on(dynamicListEntry).get().field(part);
-            if (columnQualifierPart != null) {
+            if (columnQualifierPart != null && StringUtils.isNotBlank(columnQualifierPart.toString())) {
                 columnQualifierPartList.add(columnQualifierPart);
             } else {
                 throw new InvalidColumnQualifierFieldException(part, dynamicListEntry);

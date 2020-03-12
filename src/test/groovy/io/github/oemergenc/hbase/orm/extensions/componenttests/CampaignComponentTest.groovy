@@ -66,7 +66,7 @@ class CampaignComponentTest extends AbstractComponentSpec {
 
         where:
         campaignId | _
-        null       | _
+//        null       | _
         ""         | _
         "   "      | _
     }
