@@ -5,7 +5,6 @@ import io.github.oemergenc.hbase.orm.extensions.domain.CampaignRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.client.Connection;
 
-import java.io.IOException;
 import java.util.Optional;
 
 @Slf4j
@@ -18,7 +17,7 @@ public class CampaignDao extends AbstractHBDynamicDAO<String, CampaignRecord> {
     public Optional<CampaignRecord> getCampaign(String customerId, String campaignId) {
         try {
             return Optional.ofNullable(getDynamicCell(customerId, "campaign", campaignId));
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("There was an error while trying to get campaign data of customer", e);
             e.printStackTrace();
         }

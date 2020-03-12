@@ -20,11 +20,21 @@ public class RecipeCampaignActionsDao extends AbstractHBDynamicDAO<String, Recip
     public Optional<RecipeCampaignActionRecord> getCampaignActionByPosition(String customerId,
                                                                             String campaignId,
                                                                             Integer position) throws IOException {
-        return Optional.ofNullable(getDynamicCell(customerId, CAMPAIGNS_FAMILY, List.of(campaignId, position.toString())));
+        try {
+            return Optional.ofNullable(getDynamicCell(customerId, CAMPAIGNS_FAMILY, List.of(campaignId, position.toString())));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
     }
 
     public Optional<RecipeCampaignActionRecord> getCampaignActionByDay(final String customerId,
                                                                        final String cellIdentifier) throws IOException {
-        return Optional.ofNullable(getDynamicCell(customerId, DAYS_FAMILY, cellIdentifier));
+        try {
+            return Optional.ofNullable(getDynamicCell(customerId, DAYS_FAMILY, cellIdentifier));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
     }
 }

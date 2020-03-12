@@ -7,30 +7,15 @@ import io.github.oemergenc.hbase.orm.extensions.domain.records.MultipleHBDynamic
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static io.github.oemergenc.hbase.orm.extensions.data.TestContent.getDefaultMultiHBDynamicColumRecord
+
 class MultiDynamicColumnMapperSpec extends Specification {
     def mapper = new HBDynamicColumnObjectMapper()
 
     def "Converting a record with multiple dynamic columns works"() {
         given:
-        def staticId = "staticId"
-        def dynamicValues1 = [
-                new DependentWithPrimitiveTypes("dv1_dp1_1", "dv1_dp2_1", "dv1_position_1", "dv1_recipeId_1", "<html>dv1_html_1</html>"),
-                new DependentWithPrimitiveTypes("dv1_dp1_2", "dv1_dp2_2", "dv1_position_2", "dv1_recipeId_2", "<html>dv1_html_2</html>")
-        ]
-        def dynamicValues2 = [
-                new DependentWithListType("dv2_dp1_1", "otherId_1", [], "aString_1"),
-                new DependentWithListType("dv2_dp1_2", "otherId_2", [], "aString_2"),
-        ]
-        def dynamicValues3 = [
-                new DependentWithPrimitiveTypes("dv3_dp1_1", "dv3_dp2_1", "dv3_position_1", "dv3_recipeId_1", "<html>dv3_html_1</html>"),
-                new DependentWithPrimitiveTypes("dv3_dp1_2", "dv3_dp2_2", "dv3_position_2", "dv3_recipeId_2", "<html>dv3_html_2</html>")
-        ]
-        def dynamicValues4 = [
-                new DependentWithPrimitiveTypes("dv4_dp1_1", "dv4_dp2_1", "dv4_position_1", "dv4_recipeId_1", "<html>dv4_html_1</html>"),
-                new DependentWithPrimitiveTypes("dv4_dp1_2", "dv4_dp2_2", "dv4_position_2", "dv4_recipeId_2", "<html>dv4_html_2</html>")
-        ]
-
-        def record = new MultipleHBDynamicColumnsRecord(staticId, dynamicValues1, dynamicValues2, dynamicValues3, dynamicValues4)
+        def staticId = UUID.randomUUID() as String
+        def record = getDefaultMultiHBDynamicColumRecord(staticId)
 
         when:
         def result = mapper.writeValueAsResult(record)
@@ -135,5 +120,27 @@ class MultiDynamicColumnMapperSpec extends Specification {
         dynamicList | expectedDynamicList
         [null]      | null
         []          | null
+    }
+
+    def "Converting to get for dynamic qualifiers works"() {
+        given:
+        def staticId = UUID.randomUUID() as String
+        def record = getDefaultMultiHBDynamicColumRecord(staticId)
+
+        when:
+        mapper.writeValueAsResult(record)
+
+        then:
+        def get = mapper.getAsGet(MultipleHBDynamicColumnsRecord.class, staticId.bytes, "dynamicFamily1", queriedQualifierParts)
+
+        then:
+        get
+        get.numFamilies() == expectedNumSize
+
+        where:
+        queriedQualifierParts      | expectedNumSize
+        ["dynamicId1"]             | 1
+        ["dv1_dp1_1", "dv1_dp2_1"] | 1
+        ["237912837"]              | 1
     }
 }

@@ -76,10 +76,15 @@ class SingleDynamicColumnMapperSpec extends Specification {
         result.getFamilyMap("staticFamily".bytes)['staticId'.bytes]
 
         when:
-        def get = mapper.getAsGet(SingleHBDynamicColumnRecord.class, staticId.bytes, "dynamicFamily", ["dynamicId1"])
+        def get = mapper.getAsGet(SingleHBDynamicColumnRecord.class, staticId.bytes, "dynamicFamily", queriedQualifierParts)
 
         then:
         get
-        get.numFamilies() == 1
+        get.numFamilies() == expectedNumSize
+
+        where:
+        queriedQualifierParts | expectedNumSize
+        ["dynamicId1"]        | 1
+        ["237912837"]         | 1
     }
 }

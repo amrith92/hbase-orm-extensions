@@ -25,11 +25,15 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
         hbDynamicColumnObjectMapper.validate(hbRecordClass);
     }
 
-    public T getDynamicCell(R rowKey, String family, String cellIdentifier) throws IOException {
+    public T getDynamicCell(R rowKey,
+                            String family,
+                            String cellIdentifier) throws Exception {
         return getDynamicCell(rowKey, family, List.of(cellIdentifier));
     }
 
-    public T getDynamicCell(R rowKey, String family, List<String> qualifierParts) throws IOException {
+    public T getDynamicCell(R rowKey,
+                            String family,
+                            List<String> qualifierParts) throws Exception {
         Get get = hbDynamicColumnObjectMapper.getAsGet(hbRecordClass, toBytes(rowKey), family, qualifierParts);
         return getOnGet(get);
     }

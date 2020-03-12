@@ -59,6 +59,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>>
     Get getAsGet(Class<T> hbRecordClazz, byte[] rowKey, String family, List<String> qualifierParts) {
+        HBDynamicColumnRecordValidator.validateQualifierParts(qualifierParts);
+        HBDynamicColumnRecordValidator.validateFamily(family);
+
         Get get = new Get(rowKey);
         List<HBDynamicColumn> hbDynamicColumnsForFamily = getHBDynamicColumnsForFamily(hbRecordClazz, family);
         for (val hbDynamicColumn : hbDynamicColumnsForFamily) {
@@ -315,6 +318,6 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     }
 
     public <T extends HBRecord<?>> void validate(Class<T> hbRecordClazz) {
-        new HBDynamicColumnRecordValidator().validate(hbRecordClazz);
+        HBDynamicColumnRecordValidator.validate(hbRecordClazz);
     }
 }

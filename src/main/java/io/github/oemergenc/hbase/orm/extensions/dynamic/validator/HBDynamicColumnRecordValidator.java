@@ -12,6 +12,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 public class HBDynamicColumnRecordValidator {
     private static Mirror MIRROR = new Mirror();
 
-    public <T extends HBRecord<?>> void validate(Class<T> hbRecordClazz) {
+    static public <T extends HBRecord<?>> void validate(Class<T> hbRecordClazz) {
         val hbDynamicColumnFields = MIRROR.on(hbRecordClazz).reflectAll().fields()
                 .matching(element -> element.getAnnotation(HBDynamicColumn.class) != null);
 
@@ -37,7 +38,7 @@ public class HBDynamicColumnRecordValidator {
                 throw new IllegalArgumentException("HBDynamicColumn field must be a collection, but was " + dynamicField.getType());
             }
             validateQualifierField(dynamicField, qualifier);
-            validateQualifierParts(qualifier);
+            validateQualifierParts(Arrays.asList(qualifier.parts()));
             validateFamily(family);
             validateAlias(alias);
             validateSeparator(separator);
@@ -46,8 +47,8 @@ public class HBDynamicColumnRecordValidator {
         validateNoDuplicatePrefix(columnPrefixList);
     }
 
-    private void validateNoDuplicatePrefix(List<String> columnPrefixList) {
-        List duplicates = columnPrefixList.stream().collect(Collectors.groupingBy(Function.identity()))
+    static public void validateNoDuplicatePrefix(List<String> columnPrefixList) {
+        val duplicates = columnPrefixList.stream().collect(Collectors.groupingBy(Function.identity()))
                 .entrySet()
                 .stream()
                 .filter(e -> e.getValue().size() > 1)
@@ -58,36 +59,36 @@ public class HBDynamicColumnRecordValidator {
         }
     }
 
-    private void validateQualifierParts(DynamicQualifier columnQualifierField) {
-        if (columnQualifierField.parts() == null || columnQualifierField.parts().length == 0) {
+    static public void validateQualifierParts(List<String> parts) {
+        if (parts.isEmpty()) {
             throw new IllegalArgumentException("parts array of DynamicQualifier cannot be empty or null");
         }
-        for (String part : columnQualifierField.parts()) {
+        for (String part : parts) {
             if (StringUtil.isNullOrEmpty(part)) {
                 throw new IllegalArgumentException("a part of DynamicQualifier cannot be empty or null");
             }
         }
     }
 
-    private void validateFamily(String alias) {
+    static public void validateFamily(String alias) {
         if (StringUtil.isNullOrEmpty(alias)) {
             throw new IllegalArgumentException("family of HBDynamicColumn cannot be empty or null");
         }
     }
 
-    private void validateAlias(String alias) {
+    static public void validateAlias(String alias) {
         if (StringUtil.isNullOrEmpty(alias)) {
             throw new IllegalArgumentException("alias of HBDynamicColumn cannot be empty or null");
         }
     }
 
-    private void validateSeparator(String sep) {
+    static public void validateSeparator(String sep) {
         if (StringUtil.isNullOrEmpty(sep)) {
             throw new IllegalArgumentException("separator of DynamicQualifier cannot be empty or null");
         }
     }
 
-    private void validateQualifierField(Field field, DynamicQualifier qualifier) {
+    static public void validateQualifierField(Field field, DynamicQualifier qualifier) {
 
         ParameterizedType listType = (ParameterizedType) field.getGenericType();
         Type actualTypeArgument = listType.getActualTypeArguments()[0];

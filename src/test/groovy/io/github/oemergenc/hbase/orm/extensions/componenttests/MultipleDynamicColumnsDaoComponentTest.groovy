@@ -6,6 +6,7 @@ import io.github.oemergenc.hbase.orm.extensions.domain.dto.DependentWithPrimitiv
 import io.github.oemergenc.hbase.orm.extensions.domain.records.MultipleHBDynamicColumnsRecord
 import spock.lang.Unroll
 
+import static io.github.oemergenc.hbase.orm.extensions.data.TestContent.getDefaultMultiHBDynamicColumRecord
 import static io.github.oemergenc.hbase.orm.extensions.data.TestContent.getStubDependend
 
 class MultipleDynamicColumnsDaoComponentTest extends AbstractComponentSpec {
@@ -175,5 +176,31 @@ class MultipleDynamicColumnsDaoComponentTest extends AbstractComponentSpec {
         recordResult.dynamicValues1.collect { it.position }.containsAll(["dv1_position_1"])
         recordResult.dynamicValues1.collect { it.recipeId }.containsAll(["dv1_recipeId_1"])
         recordResult.dynamicValues1.collect { it.html }.containsAll(["<html>dv1_html_1</html>"])
+    }
+
+    @Unroll
+    def "Converting to get for dynamic qualifiers works"() {
+        given:
+        def staticId = UUID.randomUUID() as String
+        def record = getDefaultMultiHBDynamicColumRecord(staticId)
+
+        when:
+        dao.persist(record)
+
+        then:
+        def resultResult = dao.getRecordForDynamicFamily(staticId, queriedQualifierParts)
+
+        then:
+        resultResult.isPresent() == isPresent
+
+        where:
+        queriedQualifierParts      | isPresent
+        ["dv1_dp1_1", "dv1_dp2_1"] | true
+        ["dynamicId1"]             | false
+        ["dv1_dp1_1", null]        | false
+        ["", "dv1_dp2_1"]          | false
+        ["   ", "dv1_dp2_1"]       | false
+        ["237912837"]              | false
+        [" "]                      | false
     }
 }
