@@ -21,20 +21,15 @@ abstract class AbstractComponentSpec extends Specification {
     static CampaignActionsBigTableUtil campaignActionsBigTableUtil
 
     static {
-        bigTableContainer.start()
-
-        def bigTablePort = bigTableContainer.getMappedPort(8086)
-        def bigTableHost = bigTableContainer.containerIpAddress + ""
-
         def bigTableProjectId = 'irrelevant'
         def bigTableInstanceId = 'irrelevant'
 
-        System.setProperty('bigtable.port', bigTablePort as String)
-        System.setProperty('bigtable.host', bigTableHost)
-        System.setProperty('bigtable.projectId', bigTableProjectId)
-        System.setProperty('bigtable.instanceId', bigTableInstanceId)
+        if (System.getenv("BIGTABLE_EMULATOR_HOST") == null) {
+            bigTableHelper = onRunOnCiServer(bigTableProjectId, bigTableInstanceId)
+        } else {
+            bigTableHelper = onRunOnDev(bigTableProjectId, bigTableInstanceId)
+        }
 
-        bigTableHelper = new BigTableHelper(bigTablePort, bigTableHost, bigTableProjectId, bigTableInstanceId)
         campaignActionsBigTableUtil = new CampaignActionsBigTableUtil(bigTableHelper)
         bigTableHelper.createTable("campaigns", ["campaign"])
         bigTableHelper.createTable("users", ["address", "optional"])
@@ -77,10 +72,7 @@ abstract class AbstractComponentSpec extends Specification {
     }
 
     public static BigTableHelper onRunOnDev(String bigTableProjectId, String bigTableInstanceId) {
-        bigTableContainer.start()
-
         bigTableHelper = new BigTableHelper(bigTableProjectId, bigTableInstanceId)
         bigTableHelper
     }
-
 }
