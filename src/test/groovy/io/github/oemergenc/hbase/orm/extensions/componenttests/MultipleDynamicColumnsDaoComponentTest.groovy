@@ -6,6 +6,8 @@ import io.github.oemergenc.hbase.orm.extensions.domain.dto.DependentWithPrimitiv
 import io.github.oemergenc.hbase.orm.extensions.domain.records.MultipleHBDynamicColumnsRecord
 import spock.lang.Unroll
 
+import static io.github.oemergenc.hbase.orm.extensions.data.TestContent.getStubDependend
+
 class MultipleDynamicColumnsDaoComponentTest extends AbstractComponentSpec {
     def dao = new MultipleDynamicColumsDao(bigTableHelper.connect())
 
@@ -121,8 +123,13 @@ class MultipleDynamicColumnsDaoComponentTest extends AbstractComponentSpec {
         recordResult.dynamicValues4.collect { it.html }.containsAll(["<html>dv4_html_1</html>", "<html>dv4_html_2</html>"])
 
         where:
-        dynamicList | expectedDynamicList
-        [null]      | null
-        []          | null
+        dynamicList                                               | expectedDynamicList
+        [null]                                                    | null
+        []                                                        | null
+        [null, getStubDependend()]                                | [getStubDependend()]
+        [getStubDependend(dynamicPart1: null)]                    | null
+        [getStubDependend(dynamicPart1: "")]                      | null
+        [getStubDependend(dynamicPart1: ""), getStubDependend()]  | [getStubDependend()]
+        [getStubDependend(dynamicPart1: " "), getStubDependend()] | [getStubDependend()]
     }
 }

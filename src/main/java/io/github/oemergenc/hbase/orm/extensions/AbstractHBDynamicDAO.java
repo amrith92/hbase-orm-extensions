@@ -22,6 +22,7 @@ public abstract class AbstractHBDynamicDAO<R extends Serializable & Comparable<R
     protected AbstractHBDynamicDAO(Connection connection) {
         super(connection);
         hbDynamicColumnObjectMapper = new HBDynamicColumnObjectMapper(new BestSuitCodec());
+        hbDynamicColumnObjectMapper.validate(hbRecordClass);
     }
 
     public T get(R rowKey) throws IOException {

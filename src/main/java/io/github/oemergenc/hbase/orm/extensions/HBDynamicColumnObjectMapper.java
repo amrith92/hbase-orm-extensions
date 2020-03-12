@@ -10,6 +10,7 @@ import com.flipkart.hbaseobjectmapper.codec.exceptions.SerializationException;
 import com.flipkart.hbaseobjectmapper.exceptions.CodecException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeComposedException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeEmptyException;
+import io.github.oemergenc.hbase.orm.extensions.dynamic.validator.HBDynamicColumnRecordValidator;
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidDynamicListEntryException;
 import lombok.extern.slf4j.Slf4j;
@@ -203,7 +204,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 dynamicListFieldEntryColumnName = prefix.concat(dynamicListFieldEntryColumnName);
                 columnQualifierToEntryMap.put(dynamicListFieldEntryColumnName, dynamicListEntry);
             } catch (InvalidColumnQualifierFieldException ex) {
-                log.error("Invalid part of dynamic qualify for list entry with dynamic qualifier {}. Entry will be ignored.", dynamicQualifier, ex);
+                log.error("Invalid part of dynamic value for list entry with dynamic qualifier {}. Entry will be ignored.", dynamicQualifier, ex);
                 ex.printStackTrace();
             } catch (InvalidDynamicListEntryException ex) {
                 log.error("Invalid value in dynamic list for column family {}. Entry will be ignored.", family, ex);
@@ -283,5 +284,9 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     public static <T> T safeCast(Object o, Class<T> clazz) {
         return clazz != null && clazz.isInstance(o) ? clazz.cast(o) : null;
+    }
+
+    public <T extends HBRecord<?>> void validate(Class<T> hbRecordClazz) {
+        new HBDynamicColumnRecordValidator().validate(hbRecordClazz);
     }
 }
