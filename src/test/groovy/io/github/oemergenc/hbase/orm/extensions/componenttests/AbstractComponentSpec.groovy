@@ -3,9 +3,6 @@ package io.github.oemergenc.hbase.orm.extensions.componenttests
 import io.github.oemergenc.hbase.orm.extensions.componenttests.utils.BigTableContainer
 import io.github.oemergenc.hbase.orm.extensions.componenttests.utils.BigTableHelper
 import io.github.oemergenc.hbase.orm.extensions.componenttests.utils.CampaignActionsBigTableUtil
-import org.apache.hadoop.hbase.HColumnDescriptor
-import org.apache.hadoop.hbase.HTableDescriptor
-import org.apache.hadoop.hbase.TableName
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
@@ -37,27 +34,12 @@ abstract class AbstractComponentSpec extends Specification {
         System.setProperty('bigtable.projectId', bigTableProjectId)
         System.setProperty('bigtable.instanceId', bigTableInstanceId)
 
-        bigTableHelper = new BigTableHelper(bigTablePort,
-                bigTableHost,
-                bigTableProjectId,
-                bigTableInstanceId)
+        bigTableHelper = new BigTableHelper(bigTablePort, bigTableHost, bigTableProjectId, bigTableInstanceId)
         campaignActionsBigTableUtil = new CampaignActionsBigTableUtil(bigTableHelper)
-        def connection = bigTableHelper.connect()
-
-        def tableDescriptor = new HTableDescriptor(TableName.valueOf('campaigns'))
-        tableDescriptor.addFamily(new HColumnDescriptor("campaign"))
-        connection.admin.createTable(tableDescriptor)
-
-        def tableDescriptor2 = new HTableDescriptor(TableName.valueOf('users'))
-        tableDescriptor2.addFamily(new HColumnDescriptor("address"))
-        tableDescriptor2.addFamily(new HColumnDescriptor("optional"))
-        connection.admin.createTable(tableDescriptor2)
-
-        def tableDescriptor3 = new HTableDescriptor(TableName.valueOf('bd_omm_prp_campaigns'))
-        tableDescriptor3.addFamily(new HColumnDescriptor("campaigns"))
-        tableDescriptor3.addFamily(new HColumnDescriptor("days"))
-        tableDescriptor3.addFamily(new HColumnDescriptor("optional"))
-        connection.admin.createTable(tableDescriptor3)
+        bigTableHelper.createTable("campaigns", ["campaign"])
+        bigTableHelper.createTable("users", ["address", "optional"])
+        bigTableHelper.createTable("bd_omm_prp_campaigns", ["campaigns", "days", "optional"])
+        bigTableHelper.createTable("multiple_dynamic_columns_table", ["staticFamily", "dynamicFamily1", "dynamicFamily2", "dynamicFamily3", "dynamicFamily4"])
     }
 
     def setupSpec() {

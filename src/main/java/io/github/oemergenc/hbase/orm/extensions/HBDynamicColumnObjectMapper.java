@@ -11,6 +11,7 @@ import com.flipkart.hbaseobjectmapper.exceptions.CodecException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeComposedException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeEmptyException;
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
+import io.github.oemergenc.hbase.orm.extensions.exception.InvalidDynamicListEntryException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.vidageek.mirror.dsl.Mirror;
@@ -178,16 +179,21 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         if (field != null) {
             if (field instanceof List) {
                 List<?> dynamicList = safeCast(field, List.class);
-                val columnQualifierToColumnValueMap = processDynamicListField(prefix, dynamicList, dynamicQualifier);
-                familyToQualifierMap.put(family, columnQualifierToColumnValueMap);
+                if (!dynamicList.isEmpty()) {
+                    val columnQualifierToColumnValueMap = processDynamicListField(family, prefix, dynamicList, dynamicQualifier);
+                    familyToQualifierMap.put(family, columnQualifierToColumnValueMap);
+                } else {
+                    log.trace("A dynamic list was empty and will be ignored");
+                }
             }
         } else {
-            log.debug("A dynamic field value was null and will be ignored");
+            log.trace("A dynamic field value was null and will be ignored");
         }
         return familyToQualifierMap;
     }
 
-    private HashMap<String, Object> processDynamicListField(String prefix,
+    private HashMap<String, Object> processDynamicListField(String family,
+                                                            String prefix,
                                                             List<?> dynamicList,
                                                             DynamicQualifier dynamicQualifier) {
         val columnQualifierToEntryMap = new HashMap<String, Object>();
@@ -197,6 +203,10 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
                 dynamicListFieldEntryColumnName = prefix.concat(dynamicListFieldEntryColumnName);
                 columnQualifierToEntryMap.put(dynamicListFieldEntryColumnName, dynamicListEntry);
             } catch (InvalidColumnQualifierFieldException ex) {
+                log.error("Invalid part of dynamic qualify for list entry with dynamic qualifier {}. Entry will be ignored.", dynamicQualifier, ex);
+                ex.printStackTrace();
+            } catch (InvalidDynamicListEntryException ex) {
+                log.error("Invalid value in dynamic list for column family {}. Entry will be ignored.", family, ex);
                 ex.printStackTrace();
             }
         }
@@ -205,21 +215,25 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     private String processDynamicListFieldEntry(Object dynamicListEntry,
                                                 DynamicQualifier dynamicQualifier) {
-        String[] parts = dynamicQualifier.parts();
-        String separator = dynamicQualifier.separator();
-        List<Object> columnQualifierPartList = new ArrayList<>();
-        for (String part : parts) {
-            Object columnQualifierPart = MIRROR.on(dynamicListEntry).get().field(part);
-            if (columnQualifierPart != null && StringUtils.isNotBlank(columnQualifierPart.toString())) {
-                columnQualifierPartList.add(columnQualifierPart);
-            } else {
-                throw new InvalidColumnQualifierFieldException(part, dynamicListEntry);
-            }
-        }
 
-        return columnQualifierPartList.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(separator));
+        if (dynamicListEntry != null) {
+            String[] parts = dynamicQualifier.parts();
+            String separator = dynamicQualifier.separator();
+            List<Object> columnQualifierPartList = new ArrayList<>();
+            for (String part : parts) {
+                Object columnQualifierPart = MIRROR.on(dynamicListEntry).get().field(part);
+                if (columnQualifierPart != null && StringUtils.isNotBlank(columnQualifierPart.toString())) {
+                    columnQualifierPartList.add(columnQualifierPart);
+                } else {
+                    throw new InvalidColumnQualifierFieldException(part, dynamicListEntry);
+                }
+            }
+            return columnQualifierPartList.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(separator));
+        } else {
+            throw new InvalidDynamicListEntryException(dynamicQualifier);
+        }
     }
 
     byte[] valueToByteArray(Serializable value) {

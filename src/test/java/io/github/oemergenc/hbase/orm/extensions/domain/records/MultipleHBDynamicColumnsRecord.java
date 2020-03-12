@@ -21,6 +21,8 @@ import java.util.List;
 @HBTable(name = "multiple_dynamic_columns_table", families = {
         @Family(name = "dynamicFamily1"),
         @Family(name = "dynamicFamily2"),
+        @Family(name = "dynamicFamily3"),
+        @Family(name = "dynamicFamily4"),
         @Family(name = "staticFamily")
 })
 public class MultipleHBDynamicColumnsRecord implements HBRecord<String> {

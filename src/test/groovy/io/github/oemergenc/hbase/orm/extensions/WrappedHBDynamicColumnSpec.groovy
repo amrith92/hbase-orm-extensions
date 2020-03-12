@@ -38,8 +38,8 @@ class WrappedHBDynamicColumnSpec extends Specification {
 
         where:
         clazz                                    | expectedQualifier
-        new MultiplePartsHBDynamicColumnClass()  | 'q$q1'
-        new MultiplePartsHBDynamicColumnClass2() | 'q2$q$q1'
+        new MultiplePartsHBDynamicColumnClass()  | 'q:q1'
+        new MultiplePartsHBDynamicColumnClass2() | 'q2:q:q1'
     }
 
     def "no HBDynamicColumn annotation does not throw exception"() {

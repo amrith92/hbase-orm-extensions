@@ -1,18 +1,17 @@
-package io.github.oemergenc.hbase.orm.extensions.mapper
+package io.github.oemergenc.hbase.orm.extensions.componenttests
 
-import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumnObjectMapper
+import io.github.oemergenc.hbase.orm.extensions.dao.MultipleDynamicColumsDao
 import io.github.oemergenc.hbase.orm.extensions.domain.dto.DependentWithListType
 import io.github.oemergenc.hbase.orm.extensions.domain.dto.DependentWithPrimitiveTypes
 import io.github.oemergenc.hbase.orm.extensions.domain.records.MultipleHBDynamicColumnsRecord
-import spock.lang.Specification
 import spock.lang.Unroll
 
-class MultiDynamicColumnMapperSpec extends Specification {
-    def mapper = new HBDynamicColumnObjectMapper()
+class MultipleDynamicColumnsDaoComponentTest extends AbstractComponentSpec {
+    def dao = new MultipleDynamicColumsDao(bigTableHelper.connect())
 
-    def "Converting a record with multiple dynamic columns works"() {
+    def "Store and reading dynamic column works"() {
         given:
-        def staticId = "staticId"
+        def expectedRowKey = "theRowKey"
         def dynamicValues1 = [
                 new DependentWithPrimitiveTypes("dv1_dp1_1", "dv1_dp2_1", "dv1_position_1", "dv1_recipeId_1", "<html>dv1_html_1</html>"),
                 new DependentWithPrimitiveTypes("dv1_dp1_2", "dv1_dp2_2", "dv1_position_2", "dv1_recipeId_2", "<html>dv1_html_2</html>")
@@ -30,25 +29,20 @@ class MultiDynamicColumnMapperSpec extends Specification {
                 new DependentWithPrimitiveTypes("dv4_dp1_2", "dv4_dp2_2", "dv4_position_2", "dv4_recipeId_2", "<html>dv4_html_2</html>")
         ]
 
-        def record = new MultipleHBDynamicColumnsRecord(staticId, dynamicValues1, dynamicValues2, dynamicValues3, dynamicValues4)
+        def record = new MultipleHBDynamicColumnsRecord(expectedRowKey, dynamicValues1, dynamicValues2, dynamicValues3, dynamicValues4)
 
         when:
-        def result = mapper.writeValueAsResult(record)
+        def rowKey = dao.persist(record)
 
         then:
-        result
-        result.getFamilyMap("dynamicFamily1".bytes)["df1#dv1_dp1_1:dv1_dp2_1".bytes]
-        result.getFamilyMap("dynamicFamily2".bytes)["df2#dv2_dp1_1".bytes]
-        result.getFamilyMap("dynamicFamily3".bytes)["df3#dv3_dp1_1:dv3_dp2_1".bytes]
-        result.getFamilyMap("dynamicFamily4".bytes)["df4#dv4_dp1_1".bytes]
-        result.getFamilyMap("staticFamily".bytes)['staticId'.bytes]
+        rowKey == expectedRowKey
 
         when:
-        def recordResult = mapper.readValue(result, MultipleHBDynamicColumnsRecord.class)
+        def recordResult = dao.get(expectedRowKey)
 
         then:
         recordResult
-        recordResult.staticId == staticId
+        recordResult.staticId == rowKey
 
         and:
         recordResult.dynamicValues1.collect { it.dynamicPart1 }.containsAll(["dv1_dp1_1", "dv1_dp1_2"])
@@ -91,22 +85,17 @@ class MultiDynamicColumnMapperSpec extends Specification {
         def record = new MultipleHBDynamicColumnsRecord(expectedRowKey, dynamicValues1, dynamicValues2, dynamicValues3, dynamicValues4)
 
         when:
-        def result = mapper.writeValueAsResult(record)
+        def rowKey = dao.persist(record)
 
         then:
-        result
-        result.getFamilyMap("dynamicFamily1".bytes).isEmpty()
-        result.getFamilyMap("dynamicFamily2".bytes)["df2#dv2_dp1_1".bytes]
-        result.getFamilyMap("dynamicFamily3".bytes)["df3#dv3_dp1_1:dv3_dp2_1".bytes]
-        result.getFamilyMap("dynamicFamily4".bytes)["df4#dv4_dp1_1".bytes]
-        result.getFamilyMap("staticFamily".bytes)['staticId'.bytes]
+        rowKey == expectedRowKey
 
         when:
-        def recordResult = mapper.readValue(result, MultipleHBDynamicColumnsRecord.class)
+        def recordResult = dao.get(expectedRowKey)
 
         then:
         recordResult
-        recordResult.staticId == expectedRowKey
+        recordResult.staticId == rowKey
 
         and:
         recordResult.dynamicValues1 == expectedDynamicList

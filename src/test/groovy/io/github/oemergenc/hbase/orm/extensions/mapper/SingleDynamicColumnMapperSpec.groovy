@@ -35,4 +35,29 @@ class SingleDynamicColumnMapperSpec extends Specification {
         recordResult.dynamicFamily.size() == 2
         recordResult.dynamicFamily.collect { it.dynamicId }.containsAll(["dynamicId1", "dynamicId2"])
     }
+
+    def "Empty lists or null values in dynamic list do not break persisting valid values"() {
+        given:
+        def staticId = "staticId"
+        def dynamicFamilyList = [null,
+                                 new DependentWithMap("dynamicId1", ["1": "bla", "12321": "qewwqe"])]
+        def record = new SingleHBDynamicColumnRecord(staticId, dynamicFamilyList)
+
+        when:
+        def result = mapper.writeValueAsResult(record)
+
+        then:
+        result
+        result.getFamilyMap("dynamicFamily".bytes)["id#dynamicId1".bytes]
+        result.getFamilyMap("staticFamily".bytes)['staticId'.bytes]
+
+        when:
+        def recordResult = mapper.readValue(result, SingleHBDynamicColumnRecord.class)
+
+        then:
+        recordResult
+        recordResult.staticId == staticId
+        recordResult.dynamicFamily.size() == 1
+        recordResult.dynamicFamily.collect { it.dynamicId }.containsAll(["dynamicId1"])
+    }
 }
