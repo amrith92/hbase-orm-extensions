@@ -16,6 +16,7 @@ import java.util.Set;
 
 import static io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampaignActionRecord.CAMPAIGNS_FAMILY;
 import static io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampaignActionRecord.CAMPAIGNS_TABLENAME;
+import static io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampaignActionRecord.DAYS_FAMILY;
 import static io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampaignActionRecord.OPTIONAL_FAMILY;
 
 
@@ -23,7 +24,7 @@ import static io.github.oemergenc.hbase.orm.extensions.domain.recipe.RecipeCampa
 @AllArgsConstructor
 @NoArgsConstructor
 @HBTable(name = CAMPAIGNS_TABLENAME,
-        families = {@Family(name = CAMPAIGNS_FAMILY), @Family(name = OPTIONAL_FAMILY)})
+        families = {@Family(name = CAMPAIGNS_FAMILY), @Family(name = DAYS_FAMILY), @Family(name = OPTIONAL_FAMILY)})
 public class RecipeCampaignActionRecord implements HBRecord<String> {
     public static final String CAMPAIGNS_TABLENAME = "bd_omm_prp_campaigns";
     public static final String CAMPAIGNS_FAMILY = "campaigns";

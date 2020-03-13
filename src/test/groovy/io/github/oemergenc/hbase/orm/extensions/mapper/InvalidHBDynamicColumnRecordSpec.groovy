@@ -1,10 +1,13 @@
 package io.github.oemergenc.hbase.orm.extensions.mapper
 
 import com.flipkart.hbaseobjectmapper.DynamicQualifier
+import com.flipkart.hbaseobjectmapper.Family
 import com.flipkart.hbaseobjectmapper.HBRecord
+import com.flipkart.hbaseobjectmapper.HBTable
 import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumn
 import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumnObjectMapper
 import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException
+import io.github.oemergenc.hbase.orm.extensions.exception.MissingHbTableAnnotationForFamilyException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -45,6 +48,19 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         where:
         clazz                               | _
         DuplicateHBDynamicColumnClass.class | _
+    }
+
+    @Unroll
+    def "Missing hbdynamic columns family on table throws exception"() {
+        when:
+        mapper.validate(clazz)
+
+        then:
+        thrown(MissingHbTableAnnotationForFamilyException)
+
+        where:
+        clazz                                          | _
+        MissingHBDynamicColumnFamilyOnTableClass.class | _
     }
 
     @Unroll
@@ -105,6 +121,7 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         String q2;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class HBRecordTestBase implements HBRecord<String> {
         def static ID = "theId"
 
@@ -119,6 +136,7 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         }
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class ValidHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
@@ -127,6 +145,7 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         List<SimpleQualifierClass> field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class DuplicateHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f", alias = "a", qualifier = @DynamicQualifier(parts = ["q"]))
         List<SimpleQualifierClass> field;
@@ -134,6 +153,15 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         List<SimpleQualifierClass> field2;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
+    class MissingHBDynamicColumnFamilyOnTableClass extends HBRecordTestBase {
+        @HBDynamicColumn(family = "f", alias = "a", qualifier = @DynamicQualifier(parts = ["q"]))
+        List<SimpleQualifierClass> field;
+        @HBDynamicColumn(family = "NotOnTable", alias = "a", qualifier = @DynamicQualifier(parts = ["q"]))
+        List<SimpleQualifierClass> field2;
+    }
+
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class EmptyQualifierHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
@@ -142,6 +170,7 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         List<SimpleQualifierClass> field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class BlankQualifierHBDynamicColumnClass extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
@@ -150,62 +179,43 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         List<SimpleQualifierClass> field;
     }
 
-    class ListHBDynamicColumnClass extends HBRecordTestBase {
-        @HBDynamicColumn(family = "",
-                alias = "a",
-                qualifier = @DynamicQualifier(parts = ["q"])
-        )
-        List<String> field;
-    }
-
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class WrongPrimitiveHBDynamicColumnClass extends HBRecordTestBase {
-        @HBDynamicColumn(family = "",
+        @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
         )
         String field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class WrongComplexHBDynamicColumnClass extends HBRecordTestBase {
-        @HBDynamicColumn(family = "",
+        @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
         )
         Map<String, String> field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class WrongListPrimitiveHBDynamicColumnClass extends HBRecordTestBase {
-        @HBDynamicColumn(family = "",
+        @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
         )
         List<Integer> field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class WrongListComplexTypeHBDynamicColumnClass extends HBRecordTestBase {
-        @HBDynamicColumn(family = "",
+        @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = ["q"])
         )
         List<Map<String, String>> field;
     }
 
-    class MultiplePartsHBDynamicColumnClass extends HBRecordTestBase {
-        @HBDynamicColumn(family = "f",
-                alias = "a",
-                qualifier = @DynamicQualifier(parts = ["q", "q1"])
-        )
-        List<TwoPartsQualifierClass> field;
-    }
-
-    class MultiplePartsHBDynamicColumnClass2 extends HBRecordTestBase {
-        @HBDynamicColumn(family = "f",
-                alias = "a",
-                qualifier = @DynamicQualifier(parts = ["q2", "q", "q1"])
-        )
-        List<ThreePartsQualifierClass> field;
-    }
-
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class InvalidMultiplePartsHBDynamicColumnClass1 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
@@ -214,6 +224,7 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         List<TwoPartsQualifierClass> field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class InvalidMultiplePartsHBDynamicColumnClass2 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
@@ -222,16 +233,13 @@ class InvalidHBDynamicColumnRecordSpec extends Specification {
         List<TwoPartsQualifierClass> field;
     }
 
+    @HBTable(name = "HBRecordTestBase", families = [@Family(name = "f")])
     class EmptyPartsHBDynamicColumnClass2 extends HBRecordTestBase {
         @HBDynamicColumn(family = "f",
                 alias = "a",
                 qualifier = @DynamicQualifier(parts = [])
         )
         List<TwoPartsQualifierClass> field;
-    }
-
-    class NoHBDynamicColumnClass extends HBRecordTestBase {
-        def field;
     }
 }
 

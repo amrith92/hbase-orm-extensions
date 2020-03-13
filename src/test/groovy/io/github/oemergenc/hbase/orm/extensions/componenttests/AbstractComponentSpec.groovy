@@ -35,6 +35,7 @@ abstract class AbstractComponentSpec extends Specification {
         bigTableHelper.createTable("users", ["address", "optional"])
         bigTableHelper.createTable("bd_omm_prp_campaigns", ["campaigns", "days", "optional"])
         bigTableHelper.createTable("multiple_dynamic_columns_table", ["staticFamily", "dynamicFamily1", "dynamicFamily2", "dynamicFamily3", "dynamicFamily4"])
+        bigTableHelper.createTable("multiple_dynamic_columns_table_with_same_family", ["staticFamily", "dynamicFamily1"])
     }
 
     def setupSpec() {

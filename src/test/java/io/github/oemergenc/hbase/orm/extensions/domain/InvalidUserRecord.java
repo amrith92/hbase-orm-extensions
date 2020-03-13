@@ -16,7 +16,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@HBTable(name = "users", families = {@Family(name = "address"), @Family(name = "optional")})
+@HBTable(name = "users", families = {@Family(name = "addresses"), @Family(name = "optional")})
 public class InvalidUserRecord implements HBRecord<String> {
 
     @HBRowKey

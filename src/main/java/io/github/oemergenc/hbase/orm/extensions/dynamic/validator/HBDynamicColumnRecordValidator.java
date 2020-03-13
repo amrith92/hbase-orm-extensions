@@ -1,9 +1,12 @@
 package io.github.oemergenc.hbase.orm.extensions.dynamic.validator;
 
 import com.flipkart.hbaseobjectmapper.DynamicQualifier;
+import com.flipkart.hbaseobjectmapper.Family;
 import com.flipkart.hbaseobjectmapper.HBRecord;
+import com.flipkart.hbaseobjectmapper.HBTable;
 import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumn;
 import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException;
+import io.github.oemergenc.hbase.orm.extensions.exception.MissingHbTableAnnotationForFamilyException;
 import lombok.val;
 import net.vidageek.mirror.dsl.Mirror;
 import org.apache.hbase.thirdparty.io.netty.util.internal.StringUtil;
@@ -23,6 +26,10 @@ public class HBDynamicColumnRecordValidator {
     private static Mirror MIRROR = new Mirror();
 
     static public <T extends HBRecord<?>> void validate(Class<T> hbRecordClazz) {
+        val hbTableFamilies = MIRROR.on(hbRecordClazz).reflect()
+                .annotation(HBTable.class).atClass().families();
+        List<String> tableFamilyNames = Arrays.stream(hbTableFamilies)
+                .map(Family::name).collect(Collectors.toList());
         val hbDynamicColumnFields = MIRROR.on(hbRecordClazz).reflectAll().fields()
                 .matching(element -> element.getAnnotation(HBDynamicColumn.class) != null);
 
@@ -39,7 +46,7 @@ public class HBDynamicColumnRecordValidator {
             }
             validateQualifierField(dynamicField, qualifier);
             validateQualifierParts(Arrays.asList(qualifier.parts()));
-            validateFamily(family);
+            validateFamily(family, tableFamilyNames);
             validateAlias(alias);
             validateSeparator(separator);
             columnPrefixList.add(family.concat(separator).concat(alias));
@@ -70,8 +77,15 @@ public class HBDynamicColumnRecordValidator {
         }
     }
 
-    static public void validateFamily(String alias) {
-        if (StringUtil.isNullOrEmpty(alias)) {
+    static public void validateFamily(String family, List<String> tableFamilyNames) {
+        validateFamilyName(family);
+        if (!tableFamilyNames.contains(family)) {
+            throw new MissingHbTableAnnotationForFamilyException(family);
+        }
+    }
+
+    public static void validateFamilyName(String family) {
+        if (StringUtil.isNullOrEmpty(family)) {
             throw new IllegalArgumentException("family of HBDynamicColumn cannot be empty or null");
         }
     }

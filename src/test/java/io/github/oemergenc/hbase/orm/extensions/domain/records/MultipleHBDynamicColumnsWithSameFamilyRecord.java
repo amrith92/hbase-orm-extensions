@@ -17,7 +17,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@HBTable(name = "multiple_dynamic_columns_table", families = {
+@HBTable(name = "multiple_dynamic_columns_table_with_same_family", families = {
         @Family(name = "dynamicFamily1"),
         @Family(name = "staticFamily")})
 public class MultipleHBDynamicColumnsWithSameFamilyRecord implements HBRecord<String> {
