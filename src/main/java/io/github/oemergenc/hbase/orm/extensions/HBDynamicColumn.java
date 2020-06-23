@@ -30,14 +30,16 @@ public @interface HBDynamicColumn {
     DynamicQualifier qualifier();
 
     /**
-     * alias to be used as prefix in the column name. If omitted the value of qualifierField will be used
+     * alias to be used as prefix in the column name. If not explicitly set no prefix will be set at all and the
+     * dynamic column family cannot contain any other dynamic field. In this case defining another dynamic
+     * column will throw an exception.
      *
      * @return alias as prefix of the resulting column name
      */
-    String alias();
+    String alias() default "";
 
     /**
-     * Optional separator between the alias and the qualifierField value
+     * Optional separator between the alias and the qualifierField value. Becomes obsolete if no alias is set explicitly
      *
      * @return separator
      */
