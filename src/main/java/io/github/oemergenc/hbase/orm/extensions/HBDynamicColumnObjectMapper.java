@@ -10,6 +10,8 @@ import com.flipkart.hbaseobjectmapper.codec.exceptions.SerializationException;
 import com.flipkart.hbaseobjectmapper.exceptions.CodecException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeComposedException;
 import com.flipkart.hbaseobjectmapper.exceptions.RowKeyCantBeEmptyException;
+import io.github.oemergenc.hbase.orm.extensions.dynamic.processor.alias.AliasHandler;
+import io.github.oemergenc.hbase.orm.extensions.dynamic.processor.alias.DynamicAliasFactory;
 import io.github.oemergenc.hbase.orm.extensions.dynamic.validator.HBDynamicColumnRecordValidator;
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidColumnQualifierFieldException;
 import io.github.oemergenc.hbase.orm.extensions.exception.InvalidDynamicListEntryException;
@@ -39,7 +41,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
-import static java.util.function.Predicate.not;
 
 @Slf4j
 public class HBDynamicColumnObjectMapper extends HBObjectMapper {
@@ -55,6 +56,10 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
 
     public HBDynamicColumnObjectMapper() {
         this(CODEC);
+    }
+
+    public static <T> T safeCast(Object o, Class<T> clazz) {
+        return clazz != null && clazz.isInstance(o) ? clazz.cast(o) : null;
     }
 
     public <R extends Serializable & Comparable<R>, T extends HBRecord<R>>
@@ -126,24 +131,17 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             HBDynamicColumn hbDynamicColumn = MIRROR.on(hbRecordClazz).reflect()
                     .annotation(HBDynamicColumn.class).atField(dynamicField.getName());
             String family = hbDynamicColumn.family();
-            String alias = Optional.of(hbDynamicColumn.alias()).filter(not(String::isBlank)).orElse(family);
-            String separator = hbDynamicColumn.separator();
-            String prefix = alias.concat(separator);
-            byte[] columnFamilyBytes = valueToByteArray(hbDynamicColumn.family());
+            AliasHandler aliasHandler = DynamicAliasFactory.getHandler(hbDynamicColumn, codec);
+            byte[] columnFamilyBytes = valueToByteArray(family);
             val navigableMapNavigableMap = map.get(columnFamilyBytes);
             if (navigableMapNavigableMap != null) {
-                val collect = navigableMapNavigableMap.entrySet().stream()
-                        .filter(navigableMapEntry -> {
-                            Serializable serializable = byteArrayToValue(navigableMapEntry.getKey());
-                            return serializable.toString().startsWith(prefix);
-                        }).collect(Collectors.toList());
+                val collect = aliasHandler.getDynamicListFieldEntries(navigableMapNavigableMap);
                 List<Serializable> genericValues = new ArrayList<>();
                 for (val nav : collect) {
                     val value = nav.getValue();
                     Collection<byte[]> values = value.values();
                     for (val theVal : values) {
-                        byteArrayToGenericObject(genericObjectType, theVal)
-                                .ifPresent(genericValues::add);
+                        byteArrayToGenericObject(genericObjectType, theVal).ifPresent(genericValues::add);
                     }
                 }
                 MIRROR.on(record).set().field(dynamicField).withValue(genericValues);
@@ -202,9 +200,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
         HBDynamicColumn hbDynamicColumn = MIRROR.on(hbRecordClazz).reflect()
                 .annotation(HBDynamicColumn.class).atField(dynamicField.getName());
         String family = hbDynamicColumn.family();
-        String alias = Optional.of(hbDynamicColumn.alias()).filter(not(String::isBlank)).orElse(family);
-        String separator = hbDynamicColumn.separator();
-        String prefix = alias.concat(separator);
+        AliasHandler aliasHandler = DynamicAliasFactory.getHandler(hbDynamicColumn, codec);
         DynamicQualifier dynamicQualifier = hbDynamicColumn.qualifier();
         val familyToQualifierMap = new HashMap<String, HashMap<String, Object>>();
         Object field = MIRROR.on(record).get().field(dynamicField);
@@ -212,7 +208,7 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             if (field instanceof List) {
                 List<?> dynamicList = safeCast(field, List.class);
                 if (!dynamicList.isEmpty()) {
-                    val columnQualifierToColumnValueMap = processDynamicListField(family, prefix, dynamicList, dynamicQualifier);
+                    val columnQualifierToColumnValueMap = processDynamicListField(family, aliasHandler, dynamicList, dynamicQualifier);
                     familyToQualifierMap.put(family, columnQualifierToColumnValueMap);
                 } else {
                     log.trace("A dynamic list was empty and will be ignored");
@@ -225,14 +221,14 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
     }
 
     private HashMap<String, Object> processDynamicListField(String family,
-                                                            String prefix,
+                                                            AliasHandler aliasHandler,
                                                             List<?> dynamicList,
                                                             DynamicQualifier dynamicQualifier) {
         val columnQualifierToEntryMap = new HashMap<String, Object>();
         for (Object dynamicListEntry : dynamicList) {
             try {
                 String dynamicListFieldEntryColumnName = processDynamicListFieldEntry(dynamicListEntry, dynamicQualifier);
-                dynamicListFieldEntryColumnName = prefix.concat(dynamicListFieldEntryColumnName);
+                dynamicListFieldEntryColumnName = aliasHandler.getDynamicListFieldEntryColumnName(dynamicListFieldEntryColumnName);
                 columnQualifierToEntryMap.put(dynamicListFieldEntryColumnName, dynamicListEntry);
             } catch (InvalidColumnQualifierFieldException ex) {
                 log.error("Invalid part of dynamic value for list entry with dynamic qualifier {}. Entry will be ignored.", dynamicQualifier, ex);
@@ -311,10 +307,6 @@ public class HBDynamicColumnObjectMapper extends HBObjectMapper {
             e.printStackTrace();
         }
         return Optional.empty();
-    }
-
-    public static <T> T safeCast(Object o, Class<T> clazz) {
-        return clazz != null && clazz.isInstance(o) ? clazz.cast(o) : null;
     }
 
     public <T extends HBRecord<?>> void validate(Class<T> hbRecordClazz) {

@@ -6,9 +6,13 @@ import com.flipkart.hbaseobjectmapper.HBRecord;
 import com.flipkart.hbaseobjectmapper.HBTable;
 import io.github.oemergenc.hbase.orm.extensions.HBDynamicColumn;
 import io.github.oemergenc.hbase.orm.extensions.exception.DuplicateColumnIdentifierException;
+import io.github.oemergenc.hbase.orm.extensions.exception.InvalidNoAliasColumnQualifierFieldException;
 import io.github.oemergenc.hbase.orm.extensions.exception.MissingHbTableAnnotationForFamilyException;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.vidageek.mirror.dsl.Mirror;
+import net.vidageek.mirror.list.dsl.MirrorList;
+import org.apache.hadoop.hbase.shaded.org.apache.commons.lang3.StringUtils;
 import org.apache.hbase.thirdparty.io.netty.util.internal.StringUtil;
 
 import java.lang.reflect.Field;
@@ -19,9 +23,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class HBDynamicColumnRecordValidator {
     private static Mirror MIRROR = new Mirror();
 
@@ -34,6 +40,7 @@ public class HBDynamicColumnRecordValidator {
                 .matching(element -> element.getAnnotation(HBDynamicColumn.class) != null);
 
         List<String> columnPrefixList = new ArrayList<>();
+        Set<String> validNoAliasDynamicFields = validateNoAliasDynamicFields(hbRecordClazz, hbDynamicColumnFields);
         for (Field dynamicField : hbDynamicColumnFields) {
             HBDynamicColumn hbDynamicColumn = MIRROR.on(hbRecordClazz).reflect()
                     .annotation(HBDynamicColumn.class).atField(dynamicField.getName());
@@ -47,11 +54,45 @@ public class HBDynamicColumnRecordValidator {
             validateQualifierField(dynamicField, qualifier);
             validateQualifierParts(Arrays.asList(qualifier.parts()));
             validateFamily(family, tableFamilyNames);
-            validateAlias(alias);
-            validateSeparator(separator);
+            if (!validNoAliasDynamicFields.contains(family)) {
+                validateAlias(alias);
+                validateSeparator(separator);
+            }
             columnPrefixList.add(family.concat(separator).concat(alias));
         }
         validateNoDuplicatePrefix(columnPrefixList);
+    }
+
+    private static <T extends HBRecord<?>> Set<String> validateNoAliasDynamicFields(Class<T> hbRecordClazz,
+                                                                                    MirrorList<Field> hbDynamicColumnFields) {
+        val hbDynamicColumns = hbDynamicColumnFields.stream()
+                .map(dynamicField -> MIRROR.on(hbRecordClazz).reflect()
+                        .annotation(HBDynamicColumn.class).atField(dynamicField.getName()))
+                .collect(Collectors.toList());
+
+        val noAliasColumns = hbDynamicColumns
+                .stream()
+                .filter(column -> StringUtils.isBlank(column.alias()))
+                .map(HBDynamicColumn::family)
+                .collect(Collectors.toList());
+
+        Map<String, ? extends List<? extends HBDynamicColumn>> noAliasColumnsSummedByFamily = hbDynamicColumns
+                .stream()
+                .filter(column -> noAliasColumns.contains(column.family()))
+                .collect(Collectors.groupingBy(HBDynamicColumn::family));
+
+        val dynamicColumnsWithMoreThanOneNoAliasField = noAliasColumnsSummedByFamily
+                .entrySet()
+                .stream()
+                .filter(stringListEntry -> stringListEntry.getValue().size() > 1)
+                .collect(Collectors.toList());
+
+        if (!dynamicColumnsWithMoreThanOneNoAliasField.isEmpty()) {
+            dynamicColumnsWithMoreThanOneNoAliasField
+                    .forEach(key -> log.error("The definition of the dynamic column for family {} is invalid. Make sure a no alias dynamic column family is not used more than once", key));
+            throw new InvalidNoAliasColumnQualifierFieldException();
+        }
+        return noAliasColumnsSummedByFamily.keySet();
     }
 
     static public void validateNoDuplicatePrefix(List<String> columnPrefixList) {
